@@ -49,12 +49,23 @@ bot.on("message", async message => {
 
           const embed = new Discord.RichEmbed()
           .setTitle("magic cards are dumb")
-          .setColor(0x105ad1)
+          .setColor(0xf2cd15)
 
           .setDescription("text based stats are also dumb.")
           .setImage("https://i.imgur.com/XxblI2S.jpg")
 
-          message.channel.send({embed});
+          message.channel.send({embed}).then(sentEmbed => {
+          let redemj = message.guild.emojis.find('name', 'red')
+          let blueemj = message.guild.emojis.find('name', 'blue')
+          let greenemj = message.guild.emojis.find('name', 'green')
+          let blackemj = message.guild.emojis.find('name', 'black')
+          let whiteemj = message.guild.emojis.find('name', 'white')
+          sentEmbed.react(redemj)
+          sentEmbed.react(blueemj)
+          sentEmbed.react(greenemj)
+          sentEmbed.react(blackemj)
+          sentEmbed.react(whiteemj)
+          });
 
 
 
