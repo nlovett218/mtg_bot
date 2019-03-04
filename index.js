@@ -14,7 +14,7 @@ Client.on('message', function(message){
     if(message.content == 'Hello')
     {
         message.reply('Get Out');
-    }   
+    }
 });
 
-Client.login(config);
+Client.login(config.token);
