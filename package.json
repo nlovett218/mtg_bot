@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/nlovett218/mtg_bot#readme",
   "dependencies": {
-    "discord.js": "^11.4.2"
+    "discord.js": "^11.4.2",
+    "discord.js-commando": "^0.10.0",
+    "file-url": "^2.0.2"
   }
 }
