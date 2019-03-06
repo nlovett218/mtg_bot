@@ -12,18 +12,22 @@ Client.on('ready', () => {
 });
 
 Client.on('message', function(message){
+
     if (message.content === '!draw' ){
-  
+
       const embed = new Discord.RichEmbed()
-      fileUrl("C:\Users\Koty Glover\Documents\GitHub\mtg_bot\img1.PNG")
-        }
+      .attachFiles(['img1.png'])
+      .setImage('attachment://img1.png')
+       message.channel.send(embed)
+
+    }
  });
 
       Client.on('message', message => {
         // Voice only works in guilds, if the message does not come from a guild,
         // we ignore it
         if (!message.guild) return;
-      
+
         if (message.content === '!join') {
           // Only try to join the sender's voice channel if they are in one themselves
           if (message.member.voiceChannel) {
@@ -37,7 +41,7 @@ Client.on('message', function(message){
           }
         }
  });
-    
+
 
 Client.on('message', function(message){
     if(message.content == 'Hello')
