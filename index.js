@@ -2,7 +2,7 @@ const Discord = require('discord.js');
 const Client = new Discord.Client();
 const config = require('./config.json');
 const Commando = require('discord.js-commando');
-const fileUrl = require('file-url');
+
 
 
 Client.on('ready', () => {
