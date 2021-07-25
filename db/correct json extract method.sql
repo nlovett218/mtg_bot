@@ -1,0 +1,1 @@
+SELECT * from mtg_user where mtg_userID <> '80821105685700608' AND JSON_EXTRACT(mtg_guilds, '$.GUILD_345835071690768384.optedInToServer') > 0 AND mtg_health > 0 order by rand() LIMIT 1;

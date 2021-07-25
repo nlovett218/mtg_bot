@@ -1,0 +1,35 @@
+{
+  "name": "mtg_bot",
+  "version": "0.6.9",
+  "description": "MTG Bot Server Files",
+  "main": "bot.js",
+  "dependencies": {
+    "bufferutil": "^4.0.1",
+    "canvas": "^2.6.1",
+    "discord.js": "^12.2.0",
+    "libsodium-wrappers": "^0.7.8",
+    "map": "^1.0.1",
+    "moment": "^2.24.0",
+    "mysql": "^2.18.1",
+    "node-adodb": "^5.0.2",
+    "node-opus": "^0.3.3",
+    "p-iteration": "^1.1.8",
+    "require-dir": "^1.2.0",
+    "sequence": "^3.0.0",
+    "snekfetch": "^4.0.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nlovett218/mtg_bot.git"
+  },
+  "author": "suff0cati0n",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nlovett218/mtg_bot/issues"
+  },
+  "homepage": "https://github.com/nlovett218/mtg_bot#readme"
+}
