@@ -145,11 +145,11 @@ async function displayInfo(obj, infoType) {
       var timeString = `${parseInt(drawTimeDifference.hours.toFixed()).pad()}:${parseInt(drawTimeDifference.minutes.toFixed()).pad()}:${parseInt(drawTimeDifference.seconds.toFixed()).pad()}`;
       DrawCooldown = timeToAllowDraw <= now ? "READY" : timeString;
     }
-    if (userDataObj.mtg_lastClaimDateTime != null && userDataObj.mtg_lastClaimDateTime != undefined) {
-      var mtg_lastClaimDateTime = new Date(userDataObj.mtg_lastClaimDateTime);
+    if (userDataObj.mtg_claimCooldown != null && userDataObj.mtg_claimCooldown != undefined) {
+      var mtg_lastClaimDateTime = new Date(userDataObj.mtg_claimCooldown);
       var timeToAllowClaim = Date.parse(new Date(Constants.moment(mtg_lastClaimDateTime).add(Constants.claimCooldown, 'minutes').format(Constants.momentTimeFormat)));
       var claimTimeDifference = Constants.getTimeBetween(timeToAllowClaim, now);
-      var timeString = `${parseInt(claimTimeDifference.hours.toFixed()).pad()}:${parseInt(claimTimeDifference.minutes.toFixed()).pad()}:${parseInt(claimTimeDifference.seconds.toFixed()).pad()}`;
+      var timeString = `${parseInt(claimTimeDifference.days.toFixed()).pad()} days + ${parseInt(claimTimeDifference.hours.toFixed()).pad()}:${parseInt(claimTimeDifference.minutes.toFixed()).pad()}:${parseInt(claimTimeDifference.seconds.toFixed()).pad()}`;
       ClaimCooldown = timeToAllowClaim <= now ? "READY" : timeString;
     }
     if (userDataObj.mtg_dailyPackCooldown != null && userDataObj.mtg_dailyPackCooldown != undefined) {

@@ -25,7 +25,7 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic the Gathering BOT", "0.71.2.30", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic: King of the Discord", "0.71.2.30", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   mdbPath:"db/MTG BOT IDS.mdb",
@@ -51,7 +51,7 @@ var local = {
   startingCardAmount: 40,
   attackCooldown: 15,
   drawCooldown: 3,
-  claimCooldown: 720,
+  claimCooldown: 44640,
   dailyCooldown: 1440,
   weeklyCooldown: 10080,
   commandCooldownTime: 500,
@@ -1109,6 +1109,34 @@ var local = {
   isNumber:function(num)
   {
     return Number.isNaN(parseFloat(num));
+  },
+
+  getRoleTiers:async function(Guild, GuildMember)
+  {
+    //var PatreonTiers = Constants.patreon_upgrades;
+    if (Guild == null || Guild == undefined)
+      return null;
+
+    if (GuildMember == null || GuildMember == undefined)
+      return null;
+
+    var acceptedTiers = [];
+
+    for (let [name, value] of Object.entries(local.patreon_upgrades)) {
+      if (value[0] != undefined && value[0] != null) {
+        if (GuildMember.roles.cache.has(value[0].roleId)) {
+          acceptedTiers[acceptedTiers.length] = value[0];
+        }
+      }
+    }
+
+    //await acceptedTiers.forEach(async (tier) => {
+      //console.log(tier);
+    //});
+
+    //console.log("Tiers Checked | " + acceptedTiers.length);
+
+    return acceptedTiers;
   }
 
 };

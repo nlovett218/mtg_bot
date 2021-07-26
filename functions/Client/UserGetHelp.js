@@ -106,7 +106,8 @@ var local = {
 `Description: **A simple non-complex text-based version of the popular card game Magic the Gathering. This bot provides a simple and fun experience ` +
 `for the casual player, whether you have or haven't played Magic the Gathering before. You can begin your journey by ` +
 `typing \`m!begin\` and you can get help at any time by typing \`m!help\`.**\n` +
-`Discord Server: __**https://discord.gg/ZPyYbB7**__\n` +
+`Discord Server: __**https://discord.gg/mkotd**__\n` +
+`Patreon: __**https://www.patreon.com/magic_kotd?fan_landing=true**__\n` +
 `Website: **Coming Soon!**\n` +
 `\n` +
 `**NOTE:** This bot is still in the development process and some features may not work as intended or provide unexpected results. The bot will be restarted on many occasions.`);
