@@ -38,6 +38,7 @@ var local = {
     //console.log(local.permissionsFlags);
     try {
       if (channelObj.permissionsFor(clientMember).has(local.permissionsFlags, false) == false)
+      //if (member.hasPermission(local))
         //console.log(permissions);
         return false;
     }

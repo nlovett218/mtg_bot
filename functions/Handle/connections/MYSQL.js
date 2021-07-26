@@ -326,6 +326,16 @@ var sql = {
 
   closeConnection:function(){
     //Constants.mysql_connection_pool.close();
+  },
+
+  getUserCount:function(){
+    var query = "SELECT COUNT(*) FROM mtg_user";
+
+    var result = local.MAKE_DB_CALL_WITH_RESULT(query);
+
+    console.log(result);
+
+    return result;
   }
 };
 

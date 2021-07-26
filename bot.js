@@ -55,6 +55,8 @@ Constants.SQL.on('success', async function() {
     Constants.guildAdmins[guild.id] = [];
     Constants.guildAdmins[guild.id].push(guild.ownerID);
   });
+
+  Constants.client.emit('updateBotActivity');
   //console.log(Constants.imageFileLocations);
   //.attachFiles(['img1.png'])
   console.log("Our client is ready to go, awaiting first command...");
@@ -65,10 +67,11 @@ Constants.SQL.on('success', async function() {
 
   if (botPermCheck) //Constants.PermissionsManager.checkPermissionsForChannel(channelObj, channelObj.guild.me)
   {*/
+  if (Constants.PermissionsManager.checkPermissionsForChannel(channelObj, channelObj.guild.me)) {
     const statusChannel = channelObj;
     //Constants.client.guilds["510730001251958794"].channels["557911093066858496"]
     statusChannel.send(Constants.MessageCodes.BOT_ONLINE);
-  //}
+  }
   //HandleFunctionCall.RegisterFunctions();
 
   console.log("Registering functions");
@@ -77,6 +80,24 @@ Constants.SQL.on('success', async function() {
 Constants.client.on('guildCreate', guild => {
   Constants.guildAdmins[guild.id] = [];
   Constants.guildAdmins[guild.id].push(guild.ownerID);
+});
+
+Constants.client.on('updateBotActivity', async function() {
+    //var playerCount = `${Constants.client.guilds.cache.map((guild) => guild.memberCount).reduce((p, c) => p + c)}`;
+    var playerCountResult = await HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT COUNT(*) FROM mtg_user");
+
+    if (playerCountResult[0] == undefined || playerCountResult[0] == null)
+      return;
+
+    //console.log(playerCountResult[0]);
+
+    var playerCount = playerCountResult[0]['']['COUNT(*)'];
+
+    //console.log(playerCount);
+
+    Constants.client.user.setActivity(`over ${Constants.client.guilds.cache.size} servers / ${playerCount} players`, {
+      type: "WATCHING",
+    });
 });
 
 
@@ -120,17 +141,20 @@ process.on('SIGINT', async err => {
   try {
     var channelObj = Constants.client.channels.cache.get(Constants.statusChannel);
 
-    if (Constants.PermissionsManager.checkPermissionsForChannel(channelObj, channelObj.guild.me))
-    {
+    //console.log(channelObj);
+
+    //if (Constants.PermissionsManager.checkPermissionsForChannel(channelObj, channelObj.guild.me))
+    if (Constants.PermissionsManager.checkPermissionsForChannel(channelObj, channelObj.guild.me)) {
       const statusChannel = channelObj;
       //Constants.client.guilds["510730001251958794"].channels["557911093066858496"]
-      statusChannel.send(Constants.MessageCodes.BOT_OFFLINE);
+      await statusChannel.send(Constants.MessageCodes.BOT_OFFLINE);
     }
   }
   catch (err)
   {
-
+    console.log(err);
   }
+
   process.exit(0);
 });
 
