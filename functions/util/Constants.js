@@ -3,6 +3,8 @@ const Events = require('events');
 const MYSQL = require('mysql');
 const Discord = require('discord.js');
 const { Permissions } = require('discord.js');
+const path = require('path');
+const FILE_SYSTEM = require('fs');
 
 var local = {
   permissionsFlags:new Permissions([
@@ -23,7 +25,7 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic the Gathering BOT", "0.69.4.20", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic the Gathering BOT", "0.71.2.30", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   mdbPath:"db/MTG BOT IDS.mdb",
@@ -184,6 +186,49 @@ var local = {
     green: "#008000",
     red: "#FF0000",
     blue: "#0000FF"
+  },
+
+  patreon_upgrades: {
+    "tier1": [{
+      extraPacks: 0,
+      earlyCards: false,
+      roleId: '833405997199786005'
+    }],
+    "tier2": [{
+      extraPacks: 1,
+      earlyCards: false,
+      roleId: '869028435283034163'
+    }],
+    "tier3": [{
+      extraPacks: 3,
+      earlyCards: false,
+      roleId: '869028470821355550'
+    }],
+    "tier4": [{
+      extraPacks: 10,
+      earlyCards: false,
+      roleId: '869028503650185236'
+    }],
+    "tier5": [{
+      extraPacks: 30,
+      earlyCards: true,
+      roleId: '869028536730652732'
+    }],
+    "tier6": [{
+      extraPacks: 30,
+      earlyCards: true,
+      roleId: '869028671334273025'
+    }],
+    "tier7": [{
+      extraPacks: 30,
+      earlyCards: true,
+      roleId: '869030006548996147'
+    }],
+    "tier8": [{
+      extraPacks: 30,
+      earlyCards: true,
+      roleId: '869030068670840832'
+    }],
   },
 
   xp_levels: {
@@ -591,11 +636,53 @@ var local = {
 
   returnClosestMatchToCard:function(stringToMatchArrayList)
   {
+      //stringToMatchArrayList = String(stringToMatchArrayList).capitalize();
       var stringToMatchArray = stringToMatchArrayList.join(" ").split('');
 
       var card = null;
       var card_index = -1;
       var cardMatch = {};
+
+      //console.log(stringToMatchArrayList);
+      //console.log(stringToMatchArray);
+      if (stringToMatchArrayList[0] != undefined)
+      {
+        var firstMatch = stringToMatchArrayList[0];
+
+        //console.log("firstMatch: " + firstMatch);
+
+        var searchForLandCardByIDResult = local.lands.filter(land => land.ID == String(firstMatch).toUpperCase())[0];
+
+        if (!(searchForLandCardByIDResult == undefined && searchForLandCardByIDResult == null))
+        {
+          //console.log(searchForLandCardByIDResult);
+          var resultIndexFirstMatch = local.cards.indexOf(searchForLandCardByIDResult);
+          var landCardData = {
+            cardID: searchForLandCardByIDResult.ID,
+            cardName: searchForLandCardByIDResult.ID.toUpperCase().startsWith("LAND") ? searchForLandCardByIDResult.land : searchForLandCardByIDResult.card_name,
+            cardIndex: resultIndexFirstMatch,
+            cardObj: searchForLandCardByIDResult//cardID.startsWith("MTG") ? Constants.cards.filter(search => search.ID == cardID)[0] : Constants.lands.filter(search => search.ID == cardID)[0]
+          }
+
+          return landCardData;
+        }
+
+        var searchForCardByIDResult = local.cards.filter(card => card.ID == String(firstMatch).toUpperCase())[0];
+
+        if (!(searchForCardByIDResult == undefined && searchForCardByIDResult == null))
+        {
+          //console.log(searchForCardByIDResult);
+          var resultIndexFirstMatch = local.cards.indexOf(searchForCardByIDResult);
+          var cardData = {
+            cardID: searchForCardByIDResult.ID,
+            cardName: searchForCardByIDResult.ID.toUpperCase().startsWith("LAND") ? searchForCardByIDResult.land : searchForCardByIDResult.card_name,
+            cardIndex: resultIndexFirstMatch,
+            cardObj: searchForCardByIDResult//cardID.startsWith("MTG") ? Constants.cards.filter(search => search.ID == cardID)[0] : Constants.lands.filter(search => search.ID == cardID)[0]
+          }
+
+          return cardData;
+        }
+      }
 
       for (i = 0; i < local.lands.length; i++)
       {
@@ -610,17 +697,18 @@ var local = {
 
         stringToMatchArray.forEach(function(char) {
           var indexOfChar = stringToMatchArray.indexOf(char);
-          if (cardNameArray.includes(String(char)))
+          if (cardNameArray.includes(String(char).toLowerCase()))
           {
             name_match++;
 
             if (indexOfChar == stringToMatchArray.length - 1)
               return;
 
-            if ((stringToMatchArray[indexOfChar] + stringToMatchArray[indexOfChar + 1]) == (cardNameArray[indexOfChar] + cardNameArray[indexOfChar + 1]))
+            //if ((stringToMatchArray[indexOfChar] + stringToMatchArray[indexOfChar + 1]) == (cardNameArray[indexOfChar] + cardNameArray[indexOfChar + 1]))
+            if ((String(stringToMatchArray[indexOfChar]).toLowerCase() + String(stringToMatchArray[indexOfChar + 1]).toLowerCase()) == (String(cardNameArray[indexOfChar]).toLowerCase() + String(cardNameArray[indexOfChar + 1]).toLowerCase()))
               consecutive_letters++;
           }
-          if (cardIDArray.includes(String(char)))
+          if (cardIDArray.includes(String(char).toLowerCase()))
           {
             id_match++;
 
@@ -650,17 +738,17 @@ var local = {
 
         stringToMatchArray.forEach(function(char) {
           var indexOfChar = stringToMatchArray.indexOf(char);
-          if (cardNameArray.includes(String(char)))
+          if (cardNameArray.includes(String(char).toLowerCase()))
           {
             name_match++;
 
             if (indexOfChar == stringToMatchArray.length - 1)
               return;
 
-            if ((stringToMatchArray[indexOfChar] + stringToMatchArray[indexOfChar + 1]) == (cardNameArray[indexOfChar] + cardNameArray[indexOfChar + 1]))
+            if ((String(stringToMatchArray[indexOfChar]).toLowerCase() + String(stringToMatchArray[indexOfChar + 1]).toLowerCase()) == (String(cardNameArray[indexOfChar]).toLowerCase() + String(cardNameArray[indexOfChar + 1]).toLowerCase()))
               consecutive_letters++;
           }
-          if (cardIDArray.includes(String(char)))
+          if (cardIDArray.includes(String(char).toLowerCase()))
           {
             id_match++;
 
@@ -688,9 +776,12 @@ var local = {
       var resultCard = null;
       var resultIndex = -1;
 
-      if (keys[card_index].startsWith("LAND")) {
+      if (keys[card_index].toUpperCase().startsWith("LAND")) {
+        console.log(keys[card_index]);
         resultCard = local.lands.filter(search => search.ID == keys[card_index])[0];
+        console.log(resultCard);
         resultIndex = local.lands.indexOf(resultCard);
+        console.log(resultIndex);
       }
       else {
         resultCard = local.cards.filter(search => search.ID == keys[card_index])[0];
@@ -703,7 +794,7 @@ var local = {
 
       var cardData = {
         cardID: resultCard.ID,
-        cardName: resultCard.ID.startsWith("LAND") ? resultCard.land : resultCard.card_name,
+        cardName: resultCard.ID.toUpperCase().startsWith("LAND") ? resultCard.land : resultCard.card_name,
         cardIndex: resultIndex,
         cardObj: resultCard//cardID.startsWith("MTG") ? Constants.cards.filter(search => search.ID == cardID)[0] : Constants.lands.filter(search => search.ID == cardID)[0]
       }
@@ -750,8 +841,48 @@ var local = {
     //const member = await obj.message.guild.members.fetch(obj.id);
     const canvas = local.Canvas.createCanvas(474, 661);
     const ctx = canvas.getContext('2d');
+    var pathRoot = path.dirname(require.main.filename || process.mainModule.filename);
+    var imagesFolder = "\\Images";
+    var result = false;
 
-    const background = search.cardID.startsWith("LAND") ? await local.Canvas.loadImage(`${local.imageDir}${search.cardID}${local.imageFileExtension}`) : await local.Canvas.loadImage(`${local.imageDir}${local.templateCardFileName}`);
+    console.log(search.cardID);
+
+    if (search.cardID.startsWith("LAND")) 
+    {
+      /*await FILE_SYSTEM.access(`${pathRoot}${imagesFolder}\\${search.cardID}${local.imageFileExtension}`, FILE_SYSTEM.constants.R_OK, (err) => {
+        console.log(`${pathRoot}${imagesFolder}\\${search.cardID}${local.imageFileExtension} ${err ? 'is not readable' : 'is readable'}`);
+
+        if (err == undefined || err == null)
+        {
+          result = true;
+        }
+        else {
+          result = false;
+        }
+      });*/
+
+      try {
+          FILE_SYSTEM.accessSync(`${pathRoot}${imagesFolder}\\${search.cardID}${local.imageFileExtension}`, FILE_SYSTEM.constants.R_OK);
+          result = true;
+          //console.log(`${file} is both readable and writable`);
+      } catch (err) {
+          result = false;
+          //console.error(`${file} is not accessible!`);
+      }
+
+      //console.log("err: " + err);
+    }
+    else
+    {
+      result = true;
+    }
+
+    if (!result || result == undefined || result == null)
+      return null;
+
+    //console.log("Not null card");
+
+    const background = search.cardID.startsWith("LAND") ? await local.Canvas.loadImage(`${pathRoot}${imagesFolder}\\${search.cardID}${local.imageFileExtension}`) : await local.Canvas.loadImage(`${local.imageDir}${local.templateCardFileName}`);
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
     if (!search.cardID.startsWith("LAND")) {
@@ -821,6 +952,7 @@ var local = {
     }
 
     const attachment = new local.Discord.MessageAttachment(canvas.toBuffer(), `card-${search.cardID}.png`);
+    //console.log(attachment.toString());
     return attachment;
   },
 

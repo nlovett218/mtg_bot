@@ -568,6 +568,51 @@ function returnClosestMatchToCard(hand, stringToMatchArrayList)
     var card = null;
     var card_index = -1;
     var handMatch = {};
+
+    if (stringToMatchArrayList[0] != undefined)
+    {
+      var firstMatch = stringToMatchArrayList[0];
+
+      //console.log("firstMatch: " + firstMatch);
+
+      var searchForLandCardByIDResult = Constants.lands.filter(land => land.ID == String(firstMatch).toUpperCase())[0];
+
+      if (!(searchForLandCardByIDResult == undefined && searchForLandCardByIDResult == null))
+      {
+        //console.log(searchForLandCardByIDResult);
+        //var resultIndexFirstMatch = hand.hand.indexOf(searchForLandCardByIDResult);
+        if (hand.hand.indexOf(searchForLandCardByIDResult.ID) > -1) {
+          var landCardData = {
+            cardID: searchForLandCardByIDResult.ID,
+            //cardName: searchForLandCardByIDResult.ID.toUpperCase().startsWith("LAND") ? searchForLandCardByIDResult.land : searchForLandCardByIDResult.card_name,
+            handIndex: hand.hand.indexOf(searchForLandCardByIDResult.ID),
+            cardObj: searchForLandCardByIDResult//cardID.startsWith("MTG") ? Constants.cards.filter(search => search.ID == cardID)[0] : Constants.lands.filter(search => search.ID == cardID)[0]
+          }
+
+          return landCardData;
+        }
+      }
+
+      var searchForCardByIDResult = Constants.cards.filter(card => card.ID == String(firstMatch).toUpperCase())[0];
+
+      if (!(searchForCardByIDResult == undefined && searchForCardByIDResult == null))
+      {
+        //console.log(searchForCardByIDResult);
+        //var resultIndexFirstMatch = local.cards.indexOf(searchForCardByIDResult);
+
+        if (hand.hand.indexOf(searchForCardByIDResult.ID) > -1) {
+          var cardData = {
+            cardID: searchForCardByIDResult.ID,
+            //cardName: searchForCardByIDResult.ID.toUpperCase().startsWith("LAND") ? searchForCardByIDResult.land : searchForCardByIDResult.card_name,
+            handIndex: hand.hand.indexOf(searchForCardByIDResult.ID),
+            cardObj: searchForCardByIDResult//cardID.startsWith("MTG") ? Constants.cards.filter(search => search.ID == cardID)[0] : Constants.lands.filter(search => search.ID == cardID)[0]
+          }
+
+          return cardData;
+        }
+      }
+    }
+
     for (i = 0; i < hand.hand.length; i++)
     {
       card = hand.hand[i].startsWith("LAND") ? Constants.lands.filter(search => search.ID == hand.hand[i])[0] : Constants.cards.filter(search => search.ID == hand.hand[i])[0];
@@ -581,17 +626,18 @@ function returnClosestMatchToCard(hand, stringToMatchArrayList)
 
       stringToMatchArray.forEach(function(char) {
         var indexOfChar = stringToMatchArray.indexOf(char);
-        if (cardNameArray.includes(String(char)))
+        if (cardNameArray.includes(String(char).toLowerCase()))
         {
           name_match++;
 
           if (indexOfChar == stringToMatchArray.length - 1)
             return;
 
-          if ((stringToMatchArray[indexOfChar] + stringToMatchArray[indexOfChar + 1]) == (cardNameArray[indexOfChar] + cardNameArray[indexOfChar + 1]))
+          if ((String(stringToMatchArray[indexOfChar]).toLowerCase() + String(stringToMatchArray[indexOfChar + 1]).toLowerCase()) == (String(cardNameArray[indexOfChar]).toLowerCase() + String(cardNameArray[indexOfChar + 1]).toLowerCase()))
+          //if ((stringToMatchArray[indexOfChar] + stringToMatchArray[indexOfChar + 1]) == (cardNameArray[indexOfChar] + cardNameArray[indexOfChar + 1]))
             consecutive_letters++;
         }
-        if (cardIDArray.includes(String(char)))
+        if (cardIDArray.includes(String(char).toLowerCase()))
         {
           id_match++;
 

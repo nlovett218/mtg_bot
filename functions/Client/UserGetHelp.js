@@ -39,6 +39,8 @@ var local = {
 
         cmd.reply({embed});
 
+        Constants.removeIDRequest(cmd.author.id);
+
         return;
       }
     }
@@ -83,6 +85,8 @@ var local = {
     `**GETTING STARTED:**\nTo get started, you must first choose a deck by typing \`m!begin\` and choose the appropiate deck color. You can view your current hand by ` +
     `typing \`m!hand\`. And you can play cards by typing \`m!playcard\` on your first main phase. Draw cards by typing \`m!draw\`.`);
     cmd.reply({embed});
+
+    Constants.removeIDRequest(cmd.author.id);
   },
 
   about:function(cmd, args)
@@ -107,6 +111,8 @@ var local = {
 `\n` +
 `**NOTE:** This bot is still in the development process and some features may not work as intended or provide unexpected results. The bot will be restarted on many occasions.`);
     cmd.reply({embed});
+
+    Constants.removeIDRequest(cmd.author.id);
   }
 }
 

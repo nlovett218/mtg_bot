@@ -196,6 +196,7 @@ async function displayInfo(obj, infoType) {
     var search = null;
 
     if (obj.args[1] != null) {
+      //obj.args
       search = Constants.returnClosestMatchToCard(obj.args.slice(1));
       //console.log(search);
     }
@@ -206,7 +207,10 @@ async function displayInfo(obj, infoType) {
     }
 
     if (search == null)
+    {
+      obj.message.channel.send(`<@${obj.id}>, no matching card was found!`);
       return;
+    }
 
     /*var searchImageAccessible = false;
 

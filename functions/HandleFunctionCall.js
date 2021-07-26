@@ -55,7 +55,7 @@ Constants.client.on('message', async function(msg) {
 });
 
 Constants.USER.on('processusercommand', cmd => {
-  var args = String(cmd).split(" ");
+  var args = String(cmd).toUpperCase().split(" ");
   var exclamationIndexIdentifier = String(cmd).indexOf("!");
   var endCommandIndex = String(cmd).indexOf(" ");
   var commandSubstring = String(cmd).substring(exclamationIndexIdentifier + 1, endCommandIndex > -1 ? endCommandIndex : String(cmd).length);

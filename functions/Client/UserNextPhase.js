@@ -137,7 +137,15 @@ var local = {
 
           emojiPairs[emojis[i]] = card.ID;
 
-          embed.addField(card.ID.startsWith("LAND") ? "land" : card.type, card.ID.startsWith("LAND") ? `${emojis[i]}(${card.ID.substring(5, card.ID.length)}) ${Constants.returnSingleManaByColor(card.colors)}${card.land}` : `${emojis[i]} (${card.ID.substring(4, card.ID.length)}) ${mana_string}${card.card_name} | ${card.power}/${card.strength}`, false);
+          var cardPower = ``;
+
+          if (card.ID.startsWith("MTG")) {
+            if (card.type.toUpperCase() == "CREATURE") {
+              cardPower = ` | ${card.power}/${card.strength}`;
+            }
+          }
+
+          embed.addField(card.ID.startsWith("LAND") ? "land" : card.type, card.ID.startsWith("LAND") ? `${emojis[i]}(${card.ID.substring(5, card.ID.length)}) ${Constants.returnSingleManaByColor(card.colors)}${card.land}` : `${emojis[i]} (${card.ID.substring(4, card.ID.length)}) ${mana_string}${card.card_name}${cardPower}`, false);
         }
 
       var message = await obj.message.channel.send({embed});

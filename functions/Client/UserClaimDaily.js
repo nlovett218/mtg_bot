@@ -84,7 +84,7 @@ var local = {
       //Constants.SQL.emit('client-update-sql', updateGameDataQuery);
     }
 
-    Constants.removeIDRequest(opponentID);
+    Constants.removeIDRequest(obj.id);
   }
 }
 
