@@ -4,7 +4,7 @@ const util = require('util');
 const Constants = require('./functions/util/Constants');
 const HandleConnection = require('./functions/handle/HandleConnection');
 const HandleFunctionCall = require('./functions/HandleFunctionCall');
-const repeating = require('repeating');
+//const repeating = require('repeating');
 
 
 Constants.BotInfo.logBotInfo();
