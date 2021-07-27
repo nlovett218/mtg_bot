@@ -4,6 +4,7 @@ const util = require('util');
 const Constants = require('./functions/util/Constants');
 const HandleConnection = require('./functions/handle/HandleConnection');
 const HandleFunctionCall = require('./functions/HandleFunctionCall');
+const repeating = require('repeating');
 
 
 Constants.BotInfo.logBotInfo();
@@ -57,6 +58,7 @@ Constants.SQL.on('success', async function() {
   });
 
   Constants.client.emit('updateBotActivity');
+  setInterval(function() { Constants.client.emit('updateBotActivity'); }, 600000);
   //console.log(Constants.imageFileLocations);
   //.attachFiles(['img1.png'])
   console.log("Our client is ready to go, awaiting first command...");
@@ -83,6 +85,7 @@ Constants.client.on('guildCreate', guild => {
 });
 
 Constants.client.on('updateBotActivity', async function() {
+
     //var playerCount = `${Constants.client.guilds.cache.map((guild) => guild.memberCount).reduce((p, c) => p + c)}`;
     var playerCountResult = await HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT COUNT(*) FROM mtg_user");
 
