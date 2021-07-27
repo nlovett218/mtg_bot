@@ -51,6 +51,16 @@ var local = {
       return;
     }
 
+    if (roleTiers[0] == undefined) {
+      obj.message.reply(" you do not have a Patreon role to claim any packs!");
+      return;
+    }
+
+    if (roleTiers[0] == null) {
+      obj.message.reply(" you do not have a Patreon role to claim any packs!");
+      return;
+    }
+
     var canClaim = false;
     var packAmountToReceive = roleTiers[0].extraPacks;//userDataObj.mtg_accountType.includes('ALPHA_TESTER') || userDataObj.mtg_accountType.includes('BOT_ADMIN') ? Constants.extraWeeklyPackAward : Constants.baseWeeklyPackAward;
     if (userDataObj.mtg_claimCooldown == null || userDataObj.mtg_claimCooldown == undefined)
