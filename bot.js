@@ -5,7 +5,14 @@ const Constants = require('./functions/util/Constants');
 const HandleConnection = require('./functions/handle/HandleConnection');
 const HandleFunctionCall = require('./functions/HandleFunctionCall');
 //const repeating = require('repeating');
+const Topgg = require("@top-gg/sdk");
+const express = require("express");
 
+const app = express();
+
+const webhook = new Topgg.Webhook(Constants.bot_webhook_authorization);
+
+var listenServerInit = false;
 
 Constants.BotInfo.logBotInfo();
 
@@ -77,6 +84,9 @@ Constants.SQL.on('success', async function() {
   //HandleFunctionCall.RegisterFunctions();
 
   console.log("Registering functions");
+
+  console.log("Initiating listen server");
+  Constants.client.emit('initiate-listen-server');
 });
 
 Constants.client.on('guildCreate', guild => {
@@ -112,6 +122,39 @@ Constants.client.on('refresh-images', async function(){
     var fileNameStr = files[fileIndex];
     Constants.imageFileLocations[fileNameStr] = `${Constants.imageDir}${fileNameStr}`;
   }
+});
+
+Constants.client.on('initiate-listen-server', async function() {
+
+  if (listenServerInit)
+     return;
+
+  listenServerInit = true;
+
+  app.post("/dblwebhook", webhook.listener(async (vote) => {
+    // vote will be your vote object, e.g
+    //console.log("We got a vote!");
+    console.log(`New vote: ${vote.user}`); // 395526710101278721 < user who voted\
+
+    var returnRewards = await Constants.awardVoteReward(vote.user, vote.isWeekend);
+
+    //console.log("rewards: " + returnRewards);
+
+    if (returnRewards != null & returnRewards != undefined) {
+
+      if (returnRewards.cards != null && returnRewards.cards != undefined)
+        Constants.sendDirectMessage(vote.user, Constants.voteRewardString, returnRewards.cards);
+  }
+
+    // You can also throw an error to the listener callback in order to resend the webhook after a few seconds
+  }));
+
+  app.listen(3000, function(err){
+    if (err) console.log("Error in server setup")
+    console.log(`Server listening on Port 3000`);
+  });
+
+  //console.log("App listening on port 3000");
 });
 
 

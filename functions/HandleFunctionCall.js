@@ -28,7 +28,17 @@ Constants.client.on('message', async function(msg) {
   //console.log(msg);
     if (String(msg).lowerCase().startsWith(Constants.BotInfo.prefix().lowerCase(), 0))
     {
+      if (msg.channel.type === 'dm') {
+          return msg.reply('I can\'t execute that command inside DMs!');
+      }
+
       if (msg.author.id != Constants.client.user.id) {
+
+          if (msg.channel.guild["me"] == undefined)
+            return console.log("Error: could not get this bot's guild member");
+
+          if (msg.channel.guild["me"] == null)
+            return console.log("Error: could not get this bot's guild member");
 
           if (msg.author.bot) return;
           if (!Constants.PermissionsManager.checkPermissionsForChannel(msg.channel, msg.channel.guild.me)) {

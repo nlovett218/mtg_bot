@@ -28,6 +28,7 @@ var local = {
   BotInfo:new BotInfo("Magic: King of the Discord", "0.73.4.22", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
+  bot_webhook_authorization: 'mtg_kotd_webhook_top_gg',
   mdbPath:"db/MTG BOT IDS.mdb",
   momentTimeFormat: 'MM-DD-YYYY HH:mm:ss',
   guildPrefix: "GUILD_",
@@ -431,6 +432,123 @@ var local = {
       BOT_ONLINE: `<:doton:831077338992476170> Bot is coming online...`,
       USER_TASK_EXISTS: `Unable to perform command at this time.`,
 
+  },
+
+  voteRewards: {
+    cards: 1,
+    extraPacks: 2,
+    magicBeans: 150
+  },
+
+  voteRewardString: '**Thanks for voting!** You have received:\n\n[CARDS]2x <:pack:831077408060604416>\n150x <:currency:831078729638871080>',
+  couldNotAwardVoteRewardsString: '**Thanks for voting!** I was not able to issue you any rewards, since I could not find any data associated to your user ID.',
+
+  awardVoteReward:async function(userId, multiplier)
+  {
+    var cardAmount = local.voteRewards.cards * (multiplier ? 2 : 1);
+    var extraPacks = local.voteRewards.extraPacks * (multiplier ? 2 : 1);
+    var magicBeans = local.voteRewards.magicBeans * (multiplier ? 2 : 1);
+
+    var cards = local.cards;
+
+    await local.until(_ => local.commandRequests.includes(userId) == false);
+
+    local.pushIDRequest(userId);
+
+    var userDataQuery = `SELECT * from mtg_user WHERE mtg_userID='${userId}';`;
+    var userDataResult = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", userDataQuery);
+
+    //console.log(userDataResult);
+
+    if (userDataResult[0] == null || userDataResult[0] == undefined)
+      return sendDirectMessage(userId, local.couldNotAwardVoteRewardsString, null);
+
+
+    var res = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT * FROM mtg_gamedata WHERE mtg_userID=\'" + userId + "\'");
+    //var jsonObj = res;//JSON.parse(res);
+    var gameDataObj = res[0].mtg_gamedata;
+    var userDataObj = userDataResult[0].mtg_user;
+    //var currentHand = JSON.parse(gameDataObj.mtg_currentHand);
+    var currentDeck = JSON.parse(gameDataObj.mtg_currentDeck);
+    //var currentBattlefield = JSON.parse(gameDataObj.mtg_currentBattlefield);
+
+    var rewards = {
+      cards: [],
+      currency: 0,
+      packs: 0
+    }
+
+    for (cardReward = 0; cardReward < cardAmount; cardReward++) {
+      var randomCard = cards[Math.floor((Math.random() * cards.length))];
+
+      currentDeck.deck.push(randomCard.ID);
+      rewards.cards.push(`${local.getManaString(JSON.parse(randomCard.mana_cost))} ${randomCard.card_name}`);
+    };
+
+    currentDeck.deck = local.shuffle(currentDeck.deck);
+
+    //console.log(randomCard);
+
+    var packs_update = userDataObj.mtg_packs + extraPacks;
+    rewards.packs = extraPacks;
+
+    var magic_beans_update = userDataObj.mtg_currency + magicBeans;
+    rewards.currency = magicBeans;
+
+    var obj = {
+      id: userId,
+      message: null
+    };
+
+    //console.log(rewards);
+
+    var updateUserDataQuery = `UPDATE mtg_user SET mtg_currency='${magic_beans_update}', mtg_packs='${packs_update}' WHERE mtg_userID='${userId}';`;
+    var updateGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentDeck='${JSON.stringify(currentDeck)}' WHERE mtg_userID='${userId}';`;
+
+    //var query = ``;
+
+    await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateUserDataQuery);
+    await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateGameDataQuery);
+    await local.action_gain_xp_currency(obj, 0);
+
+    local.removeIDRequest(userId);
+
+    return rewards;
+  },
+
+  sendDirectMessage:async function(userId, msg, msgFormatIdentifiers)
+  {
+    const user = await local.client.users.fetch(userId).catch(() => null);
+
+    if (!user) return;
+
+    var msgFormatted = msg;
+
+    //console.log(msgFormatIdentifiers);
+
+    if (msgFormatIdentifiers != null) {
+      var inputCardString = ``;
+      for (i = 0; i < msgFormatIdentifiers.length; i++)
+      {
+        inputCardString += `1x ${msgFormatIdentifiers[i]}\n`;
+      }
+
+      msgFormatted = String(msgFormatted).replace("[CARDS]", inputCardString);
+    }
+
+    await user.send(msgFormatted).catch(() => {
+       return console.log(`Attempt to send direct message to ${userId} but user has DMs closed or has no mutual servers with the bot`);
+    });
+  },
+
+  until:function(conditionFunction) {
+
+    const poll = resolve => {
+      if(conditionFunction()) resolve();
+      else setTimeout(_ => poll(resolve), 400);
+    }
+
+    return new Promise(poll);
   },
 
   getManaString:function(mana)
@@ -857,9 +975,9 @@ var local = {
     var newXPTier = local.returnTierByXP(XPUpdate);
     var promotionString = lastXPTier != newXPTier ? `${local.emoji_id.balloon}**PROMOTION!!** You have reached ${newXPTier.emoji_id}${newXPTier.rank} Tier ${newXPTier.tierText}! ${local.emoji_id.balloon}\n\n` : '\n';
 
-
-    await obj.message.channel.send(`<@${obj.id}> -> you received <:currency:${local.emoji_id.currency}>${String(currencyReceived)} and <:exp:${local.emoji_id.exp}> ${XPReceived} XP!\n` +
-      `\t\t` + promotionString);
+    if (obj.message != null && obj.message != undefined) {
+      await obj.message.channel.send(`<@${obj.id}> -> you received <:currency:${local.emoji_id.currency}>${String(currencyReceived)} and <:exp:${local.emoji_id.exp}> ${XPReceived} XP!\n` + `\t\t` + promotionString);
+    }
 
     var updateUserDataQuery = `UPDATE mtg_user SET mtg_currency='${currencyUpdate}', mtg_rankxp='${XPUpdate}' WHERE mtg_userID='${obj.id}'`;
     local.SQL.emit('client-update-sql', updateUserDataQuery);
