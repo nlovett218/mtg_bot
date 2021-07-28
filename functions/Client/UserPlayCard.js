@@ -662,6 +662,12 @@ function returnClosestMatchToCard(hand, stringToMatchArrayList)
     var handIndex = hand.hand.indexOf(keys[card_index]);
     var cardID = hand.hand[handIndex];
 
+    if (cardID == undefined)
+       return null;
+
+    if (cardID == null)
+       return null;
+
     var cardData = {
       cardID: cardID,
       handIndex: handIndex,
@@ -890,6 +896,7 @@ var local = {
         if (card == null || card == undefined)
         {
           console.log("no card found");
+          obj.message.reply(" could not find the requested card!");
           return;
         }
 
