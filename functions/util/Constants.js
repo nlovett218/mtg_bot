@@ -25,7 +25,7 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.5.15", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.5.16", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   bot_webhook_authorization: 'mtg_kotd_webhook_top_gg',
@@ -461,7 +461,10 @@ var local = {
     //console.log(userDataResult);
 
     if (userDataResult[0] == null || userDataResult[0] == undefined)
+    {
+      local.removeIDRequest(userId);
       return local.sendDirectMessage(userId, local.couldNotAwardVoteRewardsString, null);
+    }
 
 
     var res = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT * FROM mtg_gamedata WHERE mtg_userID=\'" + userId + "\'");
