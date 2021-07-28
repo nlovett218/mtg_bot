@@ -180,8 +180,8 @@ var local = {
                 var cardName = cardFromLibrary.ID.startsWith("LAND") ? cardFromLibrary.land : cardFromLibrary.card_name;
                 var amount = filteredCards[x].length;
                 var mana_cost = cardFromLibrary.ID.startsWith("LAND") ? null : JSON.parse(cardFromLibrary.mana_cost);
-                var mana_string = cardFromLibrary.ID.startsWith("LAND") ? Constants.returnSingleManaByColor(cardFromLibrary.colors) : Constants.getManaString(mana_cost);
-                var rarity_string = cardFromLibrary.ID.startsWith("LAND") ? `` : `(<:${cardFromLibrary.rarity}:${Constants.emoji_id[cardFromLibrary.rarity]}>)`;
+                var mana_string = cardFromLibrary.ID.startsWith("LAND") ? Constants.returnManaByColorTable(cardFromLibrary.colors) : Constants.getManaString(mana_cost);
+                var rarity_string = cardFromLibrary.ID.startsWith("LAND") ? `(land)` : `(<:${cardFromLibrary.rarity}:${Constants.emoji_id[cardFromLibrary.rarity]}>)`;
                 //var isAttacking = card.isDeclaredAttacker ? Constants.emoji_id.sword : '';
                 //var isDefending = card.isDeclaredDefender ? Constants.emoji_id.shield : '';
                 //embed.addField('Creature', `x${amount} ${cardFromLibrary.card_name} ${card.power}/${card.strength} ${isAttacking}${isDefending}`, false);

@@ -64,7 +64,7 @@ var local = {
     }
 
     await Constants.writeJSONFile(Constants.channels_data_file, channels);
-    await cmd.reply(" the specified channels are now __**locked!**__");
+    await cmd.reply(" the specified channels are now __**locked!**__ I will no longer respond to commands in these channels!");
   },
 
   unlockchannel:async function(cmd, args)
@@ -105,7 +105,7 @@ var local = {
     }
 
     await Constants.writeJSONFile(Constants.channels_data_file, channels);
-    await cmd.reply(" the specified channels are now __**unlocked!**__");
+    await cmd.reply(" the specified channels are now __**unlocked!**__ I will now respond to commands in these channels!");
   },
 
   matchAdminCommand: {

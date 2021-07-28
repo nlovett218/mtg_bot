@@ -2,6 +2,15 @@ const Constants = require('../util/Constants');
 const HandleFunctionCall = require('../HandleFunctionCall');
 const HandleConnection = require('../handle/HandleConnection');
 
+function isAcceptableCard(land, cardColor)
+{
+  var colorTable = JSON.parse(land.colors).colors;
+
+  var colors = Object.keys(colorTable);
+
+  return colors.includes(cardColor);
+}
+
 function addUpStartingCards(listLands, listCards, cardType)
 {
     var cards = [
@@ -21,7 +30,7 @@ function addUpStartingCards(listLands, listCards, cardType)
     }
 
     try {
-      var land = listLands.filter(land => land.type.includes('basic') && String(land.colors).includes(cardType))[0];
+      var land = listLands.filter(land => (land.type.includes('land') || land.type.includes('basic land')) && isAcceptableCard(land, cardType));
     }
     catch (err)
     {
@@ -36,7 +45,10 @@ function addUpStartingCards(listLands, listCards, cardType)
 
     for (x = 0; x < Constants.startingLandAmount; x++)
     {
-        cards.push(land);
+        if (x > 19)
+          cards.push(land[Math.floor(Math.random()*land.length)]); //chance to get 4 multicolor lands
+        else
+          cards.push(listLands.filter(land => land.type.includes('basic land') && isAcceptableCard(land, cardType))[0]) //ensures we dont get too many multicolor lands
     }
 
     for (y = 0; y < (Constants.startingCardAmount - Constants.startingLandAmount); y++)
@@ -105,7 +117,7 @@ async function displayStartingDeck(cmd, cards)
 
       //console.log(card);
 
-      embed.addField(card.ID.startsWith("LAND") ? "Land" : card.type.capitalize(), card.ID.startsWith("LAND") ? amount + "x " + card.type + " " + card.colors : amount + "x " + mana_string + card.card_name, false);
+      embed.addField(card.ID.startsWith("LAND") ? "Land" : card.type.capitalize(), card.ID.startsWith("LAND") ? amount + "x " + card.type + " " + Constants.returnManaByColorTable(card.colors) : amount + "x " + mana_string + card.card_name, false);
     }
 
     cmd.channel.send({embed});

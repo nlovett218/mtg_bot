@@ -25,13 +25,15 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic: King of the Discord", "0.71.2.30", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.4.20", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   mdbPath:"db/MTG BOT IDS.mdb",
   momentTimeFormat: 'MM-DD-YYYY HH:mm:ss',
   guildPrefix: "GUILD_",
-  statusChannel: "809224743320289292", 
+  statusChannel: "809224743320289292",
+    //"809224743320289292" Magic: KotD discord
+    //869449234695483456 Test Server
   botOwnerID: '201841156990959616', //201841156990959616
   maximumHandSize: 7,
   maximumBattlefieldSize: {
@@ -464,6 +466,36 @@ var local = {
     return `<:${color}:${local.emoji_id[color]}>`;
   },
 
+  returnManaByColorTable:function(colorFromDB)
+  {
+    //console.log(color);
+    var colorJSON = JSON.parse(colorFromDB);
+
+    var colorTableString = ``;
+
+    var colorTable = colorJSON.colors;
+
+    var white = colorTable["white"];
+    var black = colorTable["black"];
+    var green = colorTable["green"];
+    var red = colorTable["red"];
+    var blue = colorTable["blue"];
+
+    for (w = 0; w < white; w++)
+      colorTableString += local.returnSingleManaByColor("white");
+      for (bla = 0; bla < black; bla++)
+        colorTableString += local.returnSingleManaByColor("black");
+        for (g = 0; g < green; g++)
+          colorTableString += local.returnSingleManaByColor("green");
+          for (r = 0; r < red; r++)
+            colorTableString += local.returnSingleManaByColor("red");
+            for (blu = 0; blu < blue; blu++)
+              colorTableString += local.returnSingleManaByColor("blue");
+
+    //return `<:${color}:${local.emoji_id[color]}>`;
+    return colorTableString;
+  },
+
   getAvailableMana:function(currentBattlefield)
   {
     var mana_pool = {
@@ -481,8 +513,17 @@ var local = {
       var LandOnField = currentBattlefield["lands"][i];
       var land = local.lands.filter(search => search.ID == LandOnField.cardID)[0];
 
+      var landColors = JSON.parse(land.colors);
+
+      //console.log(landColors);
+
       if (!LandOnField.isTapped)
-        mana_pool[land.colors] += LandOnField.manaProduceAmount; //basic_mana_to_produce[land.land.toLowerCase()];
+      {
+        var keys = Object.keys(landColors.colors);
+        keys.forEach((color) => {
+          mana_pool[color] += landColors.colors[color]; //basic_mana_to_produce[land.land.toLowerCase()];
+        });
+      }
     }
 
     var mana_string = "";
@@ -777,11 +818,11 @@ var local = {
       var resultIndex = -1;
 
       if (keys[card_index].toUpperCase().startsWith("LAND")) {
-        console.log(keys[card_index]);
+        //console.log(keys[card_index]);
         resultCard = local.lands.filter(search => search.ID == keys[card_index])[0];
-        console.log(resultCard);
+        //console.log(resultCard);
         resultIndex = local.lands.indexOf(resultCard);
-        console.log(resultIndex);
+        //console.log(resultIndex);
       }
       else {
         resultCard = local.cards.filter(search => search.ID == keys[card_index])[0];
@@ -845,7 +886,7 @@ var local = {
     var imagesFolder = "\\Images";
     var result = false;
 
-    console.log(search.cardID);
+    //console.log(search.cardID);
 
     if (search.cardID.startsWith("LAND")) 
     {
@@ -1035,14 +1076,27 @@ var local = {
   {
     var getCardByID = id.startsWith("LAND") ? local.lands.filter(search => search.ID == id)[0] : local.cards.filter(search => search.ID == id)[0];
 
-    var mana_string = id.startsWith("LAND") ? local.returnSingleManaByColor(getCardByID.colors) : local.getManaString(JSON.parse(getCardByID.mana_cost));
+    var mana_string = ``;
+
+    if (getCardByID.type.toLowerCase() == `land`)
+    {
+      mana_string = id.startsWith("LAND") ? local.returnManaByColorTable(getCardByID.colors) : local.getManaString(JSON.parse(getCardByID.mana_cost));
+    }
+    else if (getCardByID.type.toLowerCase() == `basic land`)
+    {
+       mana_string = id.startsWith("LAND") ? local.returnManaByColorTable(getCardByID.colors) : local.getManaString(JSON.parse(getCardByID.mana_cost));
+    }
+    else
+    {
+       mana_string = id.startsWith("LAND") ? local.returnManaByColorTable(getCardByID.colors) : local.getManaString(JSON.parse(getCardByID.mana_cost));
+    }
 
     var embed = new local.Discord.MessageEmbed();
     if (id.startsWith("LAND"))
     {
       //console.log(obj.result[0].mtg_startingDeck);
       embed.setTitle("You Drew a Land!");
-      embed.setColor(local.color_codes[getCardByID.colors]);
+      embed.setColor(local.color_codes["green"]);
       embed.setDescription(mana_string + getCardByID.land);
     }
     else if (id.startsWith("MTG"))
@@ -1066,7 +1120,7 @@ var local = {
       //var keys = [x for x,y in dic.items() if y ==maxx];
       //var colorIndex = colors.values().indexOf(Math.max.apply(Math, colors.values()));
       embed.setTitle(`You drew a ${getCardByID.type}!`);
-      embed.setColor(local.color_codes[keys[max_color_cost_index]]);
+      embed.setColor(local.color_codes["green"]); //keys[max_color_cost_index]]);
       embed.setDescription(mana_string + getCardByID.card_name);
     }
 

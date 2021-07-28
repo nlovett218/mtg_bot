@@ -145,7 +145,7 @@ var local = {
             }
           }
 
-          embed.addField(card.ID.startsWith("LAND") ? "land" : card.type, card.ID.startsWith("LAND") ? `${emojis[i]}(${card.ID.substring(5, card.ID.length)}) ${Constants.returnSingleManaByColor(card.colors)}${card.land}` : `${emojis[i]} (${card.ID.substring(4, card.ID.length)}) ${mana_string}${card.card_name}${cardPower}`, false);
+          embed.addField(card.ID.startsWith("LAND") ? "land" : card.type, card.ID.startsWith("LAND") ? `${emojis[i]}(${card.ID.substring(5, card.ID.length)}) ${Constants.returnManaByColorTable(card.colors)}${card.land}` : `${emojis[i]} (${card.ID.substring(4, card.ID.length)}) ${mana_string}${card.card_name}${cardPower}`, false);
         }
 
       var message = await obj.message.channel.send({embed});

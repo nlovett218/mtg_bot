@@ -48,7 +48,7 @@ async function discardCards(obj, amount, deck, hand)
       emojiPairs[emojis[i]] = card.ID;
 
 
-      embed.addField(card.ID.startsWith("LAND") ? "land" : card.type, card.ID.startsWith("LAND") ? `${emojis[i]}(${card.ID.substring(5, card.ID.length)}) ${Constants.returnSingleManaByColor(card.colors)}${card.land}` : `${emojis[i]} (${card.ID.substring(4, card.ID.length)}) ${mana_string}${card.card_name} ${isCreatureDisplayStatsString}`, false);
+      embed.addField(card.ID.startsWith("LAND") ? "land" : card.type, card.ID.startsWith("LAND") ? `${emojis[i]}(${card.ID.substring(5, card.ID.length)}) ${Constants.returnManaByColorTable(card.colors)}${card.land}` : `${emojis[i]} (${card.ID.substring(4, card.ID.length)}) ${mana_string}${card.card_name} ${isCreatureDisplayStatsString}`, false);
     }
 
   var message = await obj.message.channel.send({embed});
@@ -558,7 +558,7 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
 function isSpecialCard(card)
 {
-  return card.cardObj.type.includes("basic land") || card.cardObj.type.includes("enchantment") || card.cardObj.type.includes("instant") || card.cardObj.type.includes("sorcery");
+  return card.cardObj.type == ("basic land") || card.cardObj.type.includes("enchantment") || card.cardObj.type.includes("instant") || card.cardObj.type.includes("sorcery");
 }
 
 function returnClosestMatchToCard(hand, stringToMatchArrayList)
@@ -709,19 +709,68 @@ function enoughManaAvailable(battlefield, card)
     island: 1
   };
 
-  for (i = 0; i < battlefield["lands"].length; i++)
+  /*for (i = 0; i < battlefield["lands"].length; i++)
   {
     var LandOnField = battlefield["lands"][i];
     var land = Constants.lands.filter(search => search.ID == LandOnField.cardID)[0];
 
     if (!LandOnField.isTapped)
       mana_pool[land.colors] += LandOnField.manaProduceAmount; //basic_mana_to_produce[land.land.toLowerCase()];
+  }*/
+
+  for (i = 0; i < battlefield["lands"].length; i++)
+  {
+    var LandOnField = battlefield["lands"][i];
+    var land = Constants.lands.filter(search => search.ID == LandOnField.cardID)[0];
+
+    if (land == undefined)
+       continue;
+
+    if (land == null)
+       continue;
+
+    var landColors = JSON.parse(land.colors);
+
+    if (!LandOnField.isTapped)
+    {
+      var keys = Object.keys(landColors.colors);
+      keys.forEach((color) => {
+        mana_pool[color] += landColors.colors[color]; //basic_mana_to_produce[land.land.toLowerCase()];
+      });
+    }
   }
 
   if (mana_cost["white"] <= mana_pool["white"] && mana_cost["black"] <= mana_pool["black"] && mana_cost["green"] <= mana_pool["green"] && mana_cost["red"] <= mana_pool["red"] && mana_cost["blue"] <= mana_pool["blue"])
     return true;
   else
     return false;
+}
+
+function manaIncludes(colorTable, allManaTypes)
+{
+  //var colorTable = 
+  let checker = (arr, target) => target.every(v => arr.includes(v));
+
+  /*if (colorTable.includes("white")) {
+    console.log(`colorTable: ${colorTable}`);
+
+    console.log(`allManaTypes: ${allManaTypes}`); //mana cost
+  }*/
+
+  //var check = checker(colorTable, allManaTypes);
+
+  //console.log(`colorTable in allManaTypes: ${check}`);
+  /*var 
+
+  jsonData.colors.forEach((color, manaProduceAmount) => {
+    if (color == manaType)
+  });
+
+  return false;*/
+
+
+
+  return checker(colorTable, allManaTypes);
 }
 
 function tapMana(currentBattlefield, mana_to_tap)
@@ -736,9 +785,29 @@ function tapMana(currentBattlefield, mana_to_tap)
 
   var updatedLands = [];
 
+  //console.log(mana_keys);
+
+  var mana_to_tap_array = []; //mana cost
+
   mana_keys.forEach(function(mana) {
     var value = mana_values[mana_keys.indexOf(mana)];
-    var untappedLandsOfSameColor = untappedLands.filter(colorLand => colorLand.colors.includes(mana));
+
+    if (value > 0)
+      mana_to_tap_array.push(mana);
+  });
+
+  //console.log(mana_to_tap_array);
+
+  mana_keys.forEach(function(mana) {
+    var value = mana_values[mana_keys.indexOf(mana)];
+    //var landFromDB = Constants.lands.filter(land => land.ID == )
+    //console.log(`value: ${value}`);
+    //console.log("objects: " + Object.keys(mana_to_tap).some((key) => mana_to_tap[key] > 0));
+
+    var untappedLandsOfSameColor = untappedLands.filter(colorLand => manaIncludes(colorLand.colors, mana_to_tap_array));
+
+    //if (mana == "white")
+      //console.log(untappedLandsOfSameColor);
 
     for (i = 0; i < value; i++)
     {
@@ -842,7 +911,7 @@ var local = {
 
         if (!enoughManaAvailable(currentBattlefield, card))
         {
-          obj.message.reply(` you can't cast ${card.cardObj.cardName} because you don't have enough mana!`);
+          obj.message.reply(` you can't cast ${card.cardObj.card_name} because you don't have enough mana!`);
           //Constants.removeIDRequest(obj.id);
           return;
         }
@@ -882,7 +951,19 @@ var local = {
         }
         else if (card.cardObj.type.includes("land")) {
           cardObj["manaProduceAmount"] = 1;
-          cardObj["colors"] = card.cardObj.colors;
+
+          
+          var values = Object.values(card.cardObj.colors);
+
+          var JSONData = JSON.parse(card.cardObj.colors);
+          var keys = Object.keys(JSONData.colors);
+
+          //console.log(JSONData);
+
+          //console.log(keys);
+          //console.log(values);
+          //console.log(card.cardObj.colors);
+          cardObj["colors"] = keys;//card.cardObj.colors;
           cardObj["permanent"] = true;
           //cardObj["equipped_cards"]= [];
           currentBattlefield["lands"].push(cardObj);
@@ -1075,7 +1156,8 @@ var local = {
         currentHand.hand.splice(currentHand.hand.indexOf(card.cardID), 1);
         var landCast = card.cardObj.type.includes("land") ? mtg_allowedLandCast - 1 : mtg_allowedLandCast;
 
-        currentBattlefield = tapMana(currentBattlefield, mana_to_tap);
+        if (!(card.cardObj.type.includes("land")))
+          currentBattlefield = tapMana(currentBattlefield, mana_to_tap);
 
 
         var updateQuery = `UPDATE mtg_gamedata SET mtg_currentDeck='${JSON.stringify(currentDeck)}', mtg_currentHand='${JSON.stringify(currentHand)}', mtg_currentBattlefield='${JSON.stringify(currentBattlefield)}', mtg_allowedLandCast='${landCast}' WHERE mtg_userID='${obj.id}';`;

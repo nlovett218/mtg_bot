@@ -367,7 +367,7 @@ var local = {
             receivedCards.push(cardFromLibrary);
             currentDeck.deck.push(cardIDFromDeck);
             var card_name = cardIDFromDeck.startsWith("LAND") ? cardFromLibrary.land : cardFromLibrary.card_name;
-            var mana_string = cardIDFromDeck.startsWith("LAND") ? Constants.returnSingleManaByColor(cardFromLibrary.colors) : Constants.getManaString(JSON.parse(cardFromLibrary.mana_cost));
+            var mana_string = cardIDFromDeck.startsWith("LAND") ? Constants.returnManaByColorTable(cardFromLibrary.colors) : Constants.getManaString(JSON.parse(cardFromLibrary.mana_cost));
             receivedCardNameString += mana_string + card_name + " (" + cardIDFromDeck + ")\n\t\t";
             //console.log(mana_string);
           }

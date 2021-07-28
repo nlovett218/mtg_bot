@@ -56,7 +56,7 @@ var local = {
         card = Constants.lands.filter(search => search.ID == currentHand.hand[i])[0];
 
       var isCreatureDisplayStatsString = card.type == 'creature' ? `| ${card.power}/${card.strength}` : ``;
-      embed.addField(card.ID.startsWith("LAND") ? "Land" : card.type.capitalize(), card.ID.startsWith("LAND") ? `(${card.ID.substring(5, card.ID.length)}) ${Constants.returnSingleManaByColor(card.colors)}${card.land}` : `(${card.ID.substring(4, card.ID.length)}) ${mana_string}${card.card_name} ${isCreatureDisplayStatsString}`, false);
+      embed.addField(card.ID.startsWith("LAND") ? "Land" : card.type.capitalize(), card.ID.startsWith("LAND") ? `(${card.ID.substring(5, card.ID.length)}) ${Constants.returnManaByColorTable(card.colors)}${card.land}` : `(${card.ID.substring(4, card.ID.length)}) ${mana_string}${card.card_name} ${isCreatureDisplayStatsString}`, false);
     }
 
     obj.message.reply({embed});
