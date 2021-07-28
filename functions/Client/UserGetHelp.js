@@ -21,6 +21,11 @@ function getCommandsString()
 }
 
 var local = {
+  vote:async function (cmd, args)
+  {
+    
+  },
+
   help:async function(cmd, args)
   {
     Constants.pushIDRequest(cmd.author.id);
