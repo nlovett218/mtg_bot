@@ -11,6 +11,7 @@ var HandleConnection = {
     switch (type) {
       case "MYSQL-returnQuery":
         result = await MYSQL.MAKE_DB_CALL_WITH_RESULT(data);
+        //console.log(result);
         break;
       case "MYSQL-fireAndForget":
         result = await MYSQL.FIRE_AND_FORGET(data);

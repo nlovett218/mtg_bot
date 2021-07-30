@@ -191,6 +191,23 @@ var local = {
     blue: "#0000FF"
   },
 
+  attributes: [
+    "deathtouch",
+    "defender",
+    "double strike",
+    "first strike",
+    "flash",
+    "flying",
+    "haste",
+    "hexproof",
+    "indestructible",
+    "lifelink",
+    "menace",
+    "reach",
+    "trample",
+    "vigilance"
+  ],
+ 
   patreon_upgrades: {
     "tier1": [{
       extraPacks: 0,
@@ -1063,18 +1080,44 @@ var local = {
       if (search.cardObj.description != null && search.cardObj.description != undefined) {
         var description = local.fragmentText(ctx, search.cardObj.description, 130);
 
+        //console.log(description);
+
+        description = description.filter(str => str != "");
+
         for (i = 0; i < description.length; i++)
         {
           // Pick up the pen
-          ctx.font = '28px matrix';//'28px matrix';
-      	  ctx.fillStyle = '#000000';
-      	  ctx.fillText(description[i], 50, 445 + (i * 30));
+          //console.log("text: " + description[i]);
+          /*if (description[i] != undefined && description[i] != null) {
+            var hasAttribute = local.containsSpecialAttributes(description[i]);
+            //console.log(hasAttribute);
+          }*/
+
+          if (description[i] == "" || description[i] == " ")
+          {
+            console.log('empty string');
+            continue;
+          }
+
+          if (i <= 0 && local.containsSpecialAttributes(description[i])) {
+            //console.log("print bold");
+            ctx.font = 'bold 28px sans';//'28px matrix';
+      	    ctx.fillStyle = '#000000';
+      	    ctx.fillText(description[i], 50, 445 + (i * 30));
+          }
+          else {
+            //console.log("print non-bold");
+            var bold = local.containsSpecialAttributes(description[i]) ? `bold ` : ``;
+            ctx.font = `${bold}28px sans`;//'28px matrix';
+            ctx.fillStyle = '#000000';
+            ctx.fillText(description[i], 50, 445 + (i * 30));
+          }
         }
       }
 
       var legendaryText = search.cardObj.ID.startsWith("MTG") && search.cardObj.legendary ? "Legendary " : "";
 
-      ctx.font = 'bold 28px matrix';//'28px matrix';
+      ctx.font = 'bold 28px sans';//'28px matrix';
       ctx.fillStyle = '#000000';
       ctx.fillText(search.cardObj.card_name, 50, 60); //Name
       ctx.fillText(`${legendaryText}${search.cardObj.type.capitalize()}`, 50, 395); //type
@@ -1087,7 +1130,7 @@ var local = {
 
         if (search.cardObj.type.toLowerCase() == 'creature')
         {
-          ctx.font = 'bold 28px matrix';//'28px matrix';
+          ctx.font = 'bold 28px sans';//'28px matrix';
           ctx.textAlign = "right";
       	  ctx.fillStyle = '#000000';
           ctx.fillText(`${search.cardObj.power}/${search.cardObj.strength}`, 425, 600);
@@ -1101,7 +1144,7 @@ var local = {
           var color = mana_colors[i];
           if (mana_cost[color] != undefined && mana_cost[color] > 0)
           {
-            ctx.font = '28px matrix';
+            ctx.font = '28px sans';
             ctx.textAlign = "right";
             const mana = await local.Canvas.loadImage(`${local.imageDir}${color}${local.imageFileExtension}`);
             ctx.drawImage(mana, 400 - (color_index * 50), 35, 35, 35);
@@ -1118,28 +1161,97 @@ var local = {
     return attachment;
   },
 
+  containsSpecialAttributes:function(text)
+  {
+    //console.log("text to search: " + text);
+
+    var hasAttribute = false;
+
+    try {
+
+      //return true;
+
+      let checker = function(value) {
+        //var prohibited = ['banana', 'apple'];
+
+        //return text.every(function(v) {
+          return text.toLowerCase().indexOf(value) >= 0;
+        //});
+      }
+
+      var arr = local.attributes.filter(checker);
+      //console.log(arr);
+
+      return arr.length >= 1;
+
+
+      /*for (i = 0; i < attributes.length; i++)
+      {
+        console.log(`checking ${text.toLowerCase()} against ${attributes[i]}`);
+        if (text.toLowerCase().includes(attributes[i]))
+        {
+            console.log(`match found ${text.toLowerCase()} against ${attributes[i]}`);
+            hasAttribute = true;
+        }
+      }*/
+    }
+    catch (err)
+    {
+      console.log(err);
+    }
+
+    return false;
+  },
+
   fragmentText:function(ctx, text, maxWidth) {
-      var words = text.split(' '),
-          lines = [],
-          line = "";
+      var textOriginal = text.replace("[NEW_LINE]", " [NEW_LINE] ").split(' ');
+      var newLineIndexes = []
+
+      /*textOriginal.forEach((word) => {
+        if 
+      });*/
+
+      //text = text.replace("[NEW_LINE]", "\n");
+      var words = /*text.split(' ')*/textOriginal, lines = [], line = "";
       if (ctx.measureText(text).width < maxWidth) {
           return [text];
       }
       while (words.length > 0) {
           var split = false;
-          while (ctx.measureText(words[0]).width >= maxWidth) {
-              var tmp = words[0];
-              words[0] = tmp.slice(0, -1);
-              if (!split) {
-                  split = true;
-                  words.splice(1, 0, tmp.slice(-1));
-              } else {
-                  words[1] = tmp.slice(-1) + words[1];
-              }
+
+            //if (words[0].toUpperCase().includes("[NEW LINE]"))
+              //split = true;
+
+            while (ctx.measureText(words[0]).width >= maxWidth) {
+                var tmp = words[0];
+                words[0] = tmp.slice(0, -1);
+                if (!split) {
+                    split = true;
+                    words.splice(1, 0, tmp.slice(-1));
+                } else {
+                    words[1] = tmp.slice(-1) + words[1];
+                }
+
+                //console.log(words[0]);
+            }
+
+          //console.log(words[0]);
+
+          if (line.includes("[NEW_LINE]"))
+          {
+            //newLineIndexes
+            line = line.replace("[NEW_LINE] ", "");
+            lines.push(line);
+            line = "";
           }
-          if (ctx.measureText(line + words[0]).width < maxWidth) {
+
+          if ((ctx.measureText(line + words[0]).width < maxWidth)) {
+              //continue current line
               line += words.shift() + " ";
-          } else {
+          } 
+
+          else {
+              //start new line
               lines.push(line);
               line = "";
           }
@@ -1148,6 +1260,110 @@ var local = {
           }
       }
       return lines;
+  },
+
+  drawMultilineText:function(ctx, text, opts) {
+
+    // Default options
+    if (!opts)
+        opts = {}
+    if (!opts.font)
+        opts.font = 'sans-serif'
+    if (typeof opts.stroke == 'undefined')
+        opts.stroke = false
+    if (typeof opts.verbose == 'undefined')
+        opts.verbose = false
+    if (!opts.rect)
+        opts.rect = {
+            x: 0,
+            y: 0,
+            width: ctx.canvas.width,
+            height: ctx.canvas.height
+        }
+    if (!opts.lineHeight)
+        opts.lineHeight = 1.1
+    if (!opts.minFontSize)
+        opts.minFontSize = 30
+    if (!opts.maxFontSize)
+        opts.maxFontSize = 100
+    // Default log function is console.log - Note: if verbose il false, nothing will be logged anyway
+    if (!opts.logFunction)
+        opts.logFunction = function (message) { console.log(message) }
+
+
+    const words = require('words-array')(text)
+    if (opts.verbose) opts.logFunction('Text contains ' + words.length + ' words')
+    var lines = []
+    let y;  //New Line
+
+    // Finds max font size  which can be used to print whole text in opts.rec
+
+    
+    let lastFittingLines;                       // declaring 4 new variables (addressing issue 3)
+    let lastFittingFont;
+    let lastFittingY;
+    let lastFittingLineHeight;
+    for (var fontSize = opts.minFontSize; fontSize <= opts.maxFontSize; fontSize++) {
+
+        // Line height
+        var lineHeight = fontSize * opts.lineHeight
+
+        // Set font for testing with measureText()
+        ctx.font = ' ' + fontSize + 'px ' + opts.font
+
+        // Start
+        var x = opts.rect.x;
+        y = lineHeight; //modified line        // setting to lineHeight as opposed to fontSize (addressing issue 1)
+        lines = []
+        var line = ''
+
+        // Cycles on words
+
+       
+        for (var word of words) {
+            // Add next word to line
+            var linePlus = line + word + ' '
+            // If added word exceeds rect width...
+            if (ctx.measureText(linePlus).width > (opts.rect.width)) {
+                // ..."prints" (save) the line without last word
+                lines.push({ text: line, x: x, y: y })
+                // New line with ctx last word
+                line = word + ' '
+                y += lineHeight
+            } else {
+                // ...continues appending words
+                line = linePlus
+            }
+        }
+
+        // "Print" (save) last line
+        lines.push({ text: line, x: x, y: y })
+
+        // If bottom of rect is reached then breaks "fontSize" cycle
+            
+        if (y > opts.rect.height)                                           
+            break;
+            
+        lastFittingLines = lines;               // using 4 new variables for 'step back' (issue 3)
+        lastFittingFont = ctx.font;
+        lastFittingY = y;
+        lastFittingLineHeight = lineHeight;
+
+    }
+
+    lines = lastFittingLines;                   // assigning last fitting values (issue 3)                    
+    ctx.font = lastFittingFont;                                                                   
+    if (opts.verbose) opts.logFunction("Font used: " + ctx.font);
+    const offset = opts.rect.y - lastFittingLineHeight / 2 + (opts.rect.height - lastFittingY) / 2;     // modifying calculation (issue 2)
+    for (var line of lines)
+        // Fill or stroke
+        if (opts.stroke)
+            ctx.strokeText(line.text.trim(), line.x, line.y + offset) //modified line
+        else
+            ctx.fillText(line.text.trim(), line.x, line.y + offset) //modified line
+
+    // Returns font size
+    return fontSize
   },
 
   getEquippedEnchantments:function(type, creature, enchantments)

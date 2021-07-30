@@ -289,7 +289,10 @@ function send_sql_query(options) {
     return new Promise(( resolve, reject ) => {
         Constants.mysql_connection_pool.query(options, ( err, rows ) => {
             if ( err )
+            {
+                console.log(err);
                 return reject( err );
+            }
             resolve( rows );
         } );
     } );

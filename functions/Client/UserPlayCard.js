@@ -251,7 +251,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         Constants.removeIDRequest(opponentID);
         break;
       case 'prevent_damage':
-        obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
+        obj.message.channel.send(`<@${obj.id}> -> this card will be used from your hand when you get attacked! Leave it in your hand with enough mana to get the benefit.`);
         break;
       case 'destroy_permanent':
         if (mentions.length < 1)
@@ -363,7 +363,255 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
 
         break;
       case 'copy_permanent':
-        obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
+        //obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
+
+        var copy_source = attributes.copy_permanent.copy_source;
+
+        //console.log(copy_source);
+
+        Constants.pushIDRequest(obj.id);
+
+        var cardFromLibrary = cardObj.cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == cardObj.cardID)[0] : Constants.lands.filter(land => land.ID == cardObj.cardID)[0];
+
+        if (copy_source == "self") {
+          var getOpponentGameDataQuery = `SELECT * FROM mtg_gamedata WHERE mtg_userID='${obj.id}';`;
+          var opponentGameData = await HandleConnection.callDBFunction("MYSQL-returnQuery", getOpponentGameDataQuery);
+
+          if (opponentGameData[0] == null || opponentGameData[0] == undefined)
+          {
+            obj.message.channel.send(`<@${obj.id}> -> no user data found!`);
+            //Constants.removeIDRequest(obj.id);
+            Constants.removeIDRequest(obj.id);
+            break;
+          }
+
+
+          var opponent_gameDataObj = opponentGameData[0].mtg_gamedata;
+          var selfBattlefield = JSON.parse(opponent_gameDataObj.mtg_currentBattlefield);
+          var selfHand = JSON.parse(opponent_gameDataObj.mtg_currentHand);
+          //var attributes = JSON.parse(card.cardObj.attributes);
+          //var opponentID = opponent_gameDataObj.mtg_userID;
+          var copyAmount = parseInt(attributes.copy_permanent.amount)
+          var permanentType = attributes.copy_permanent.permanent_type;
+
+          chosen_target = await chooseTargets(obj, obj.id, selfBattlefield, copyAmount, permanentType, false, null, cardFromLibrary, `Choose up to ${copyAmount} '${permanentType}' permanent(s) to copy:`);
+
+          if (chosen_target == null || chosen_target.length < 1)
+          {
+            obj.message.channel.send(`<@${obj.id}> -> no targets were selected or no '${permanentType}' permanents were available to be targeted!`);
+            Constants.removeIDRequest(obj.id);
+            break;
+          }
+
+          await forEach(chosen_target, async (target) => {
+            var targetCardFromLibrary = target.cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == target.cardID)[0] : Constants.lands.filter(land => land.ID == target.cardID)[0];
+
+            if (targetCardFromLibrary.type.toLowerCase().includes('enchantment'))
+            {
+              var copy_data = {
+                //power: chosen_target[0].power,
+                cardID: chosen_target[0].cardID,
+                fieldID: returnNewID(),
+                ownerID: obj.id,
+                isTapped: true,
+                //strength: chosen_target[0].strength,
+                //permanent: chosen_target[0].permanent,
+                attributes: '',//JSON.parse(targetCardFromLibrary.attributes),
+                equipped_cards: [],
+                //isDeclaredAttacker: false,
+                //isDeclaredDefender: false
+                target: null
+              };
+
+              //copy_data["target"] = null;
+              copy_data["attributes"] = JSON.parse(targetCardFromLibrary.attributes);
+
+
+              var copy_cardType = copy_data["attributes"].cardType;
+              var copy_targetAmount = copy_data["attributes"].amount;
+              var copy_permanentType = copy_data["attributes"].permanent_type;
+              var copy_targetSource = copy_data["attributes"].source;
+
+              //console.log(copy_targetSource);
+
+              var card_name = targetCardFromLibrary.ID.startsWith("MTG") ? targetCardFromLibrary.card_name : targetCardFromLibrary.land;
+
+              if (copy_cardType == "aura") {
+                var chosen_target_copy_enchantment = await chooseTargets(obj, obj.id, selfBattlefield, copy_targetAmount, copy_permanentType, false, null, targetCardFromLibrary.cardObj, "Choose a permanent to equip:");
+                
+                if (chosen_target_copy_enchantment == null || chosen_target_copy_enchantment.length < 1)
+                {
+                  obj.message.channel.send(`<@${obj.id}> -> no enchantments were targeted or you don't have any creatures available to target!`);
+                  //Constants.removeIDRequest(obj.id);
+                  Constants.removeIDRequest(obj.id);
+                  return;
+                }
+
+                var random_opponent_copy_data = {
+                    //power: chosen_target[0].power,
+                    cardID: targetCardFromLibrary.cardID,
+                    fieldID: returnNewID(),
+                    ownerID: obj.id,
+                    isTapped: true,
+                    //strength: chosen_target[0].strength,
+                    //permanent: chosen_target[0].permanent,
+                    attributes: JSON.parse(targetCardFromLibrary.attributes),
+                    //equipped_cards: [],
+                    //isDeclaredAttacker: false,
+                    //isDeclaredDefender: false
+                    target: null
+                };
+
+                for(i = 0; i < chosen_target_copy_enchantment.length; i++)
+                {
+                  if (copy_permanentType.includes('creature'))
+                  {
+                    var indexOfCreature = selfBattlefield["creatures"].indexOf(chosen_target_copy_enchantment[i]);
+                    selfBattlefield["creatures"][indexOfCreature].equipped_cards.push(cardObj.fieldID);
+                    selfBattlefield["enchantments"].push(cardObj);
+                  }
+                  else if (copy_permanentType.includes('lands'))
+                  {
+                    var indexOfLand = selfBattlefield["lands"].indexOf(chosen_target_copy_enchantment[i]);
+                    selfBattlefield["lands"][indexOfLand].equipped_cards.push(cardObj.fieldID);
+                    selfBattlefield["enchantments"].push(cardObj);
+                  }
+                }
+              }
+
+              if (copy_cardType == "aura_opponent") {
+                //console.log(`looking in: ${copy_targetSource}`)
+                var random_opponent = await getRandomOpponent(obj.id, obj.message.channel.guild.id, copy_permanentType, copy_targetSource);
+
+                if (random_opponent == null || random_opponent == undefined)
+                {
+                  obj.message.channel.send(`<@${obj.id}> -> no one available to be targeted with ${card_name}!`);
+                  Constants.removeIDRequest(obj.id);
+                  return;
+                }
+
+
+                var random_opponent_commandRequestWaitCheck = await Constants.until(_ => Constants.commandRequests.includes(random_opponent.id) == false);
+                Constants.pushIDRequest(random_opponent.id);
+
+                //var randomOpponentGameDataQuery = `SELECT * FROM mtg_gamedata WHERE mtg_userID='${random_opponent.id}';`;
+                //var randomOpponentGameData = random_opponent.mtg_gamedata;
+                var randomOpponentBattlefield = JSON.parse(random_opponent.mtg_currentBattlefield);
+                var randomOpponentHand = JSON.parse(random_opponent.mtg_currentHand);
+
+
+                var chosen_target_copy_enchantment = await chooseTargets(obj, random_opponent.id, randomOpponentBattlefield, copy_targetAmount, copy_permanentType, false, null, targetCardFromLibrary.cardObj, "Choose a permanent to equip:");
+                
+                if (chosen_target_copy_enchantment == null || chosen_target_copy_enchantment.length < 1)
+                {
+                  obj.message.channel.send(`<@${obj.id}> -> no enchantments were targeted or they don't have any creatures available to target!`);
+                  Constants.removeIDRequest(obj.id);
+                  return;
+                }
+
+                  var random_opponent_copy_data = {
+                    //power: chosen_target[0].power,
+                    cardID: targetCardFromLibrary.cardID,
+                    fieldID: returnNewID(),
+                    ownerID: obj.id,
+                    isTapped: true,
+                    //strength: chosen_target[0].strength,
+                    //permanent: chosen_target[0].permanent,
+                    attributes: JSON.parse(targetCardFromLibrary.attributes),
+                    //equipped_cards: [],
+                    //isDeclaredAttacker: false,
+                    //isDeclaredDefender: false
+                    target: random_opponent.id
+                  };
+
+                  for(i = 0; i < chosen_target_copy_enchantment.length; i++)
+                  {
+                    if (copy_permanentType.includes('creature'))
+                    {
+                      var indexOfCreature = randomOpponentBattlefield["creatures"].indexOf(chosen_target_copy_enchantment[i]);
+                      randomOpponentBattlefield["creatures"][indexOfCreature].equipped_cards.push(random_opponent_copy_data.fieldID);
+                      randomOpponentBattlefield["enchantments"].push(random_opponent_copy_data);
+                      selfBattlefield["enchantments"].push(random_opponent_copy_data);
+                    }
+                    else if (copy_permanentType.includes('lands'))
+                    {
+                      var indexOfLand = opponentBattlefield["lands"].indexOf(chosen_target_copy_enchantment[i]);
+                      randomOpponentBattlefield["lands"][indexOfLand].equipped_cards.push(random_opponent_copy_data.fieldID);
+                      randomOpponentBattlefield["enchantments"].push(random_opponent_copy_data);
+                      selfBattlefield["enchantments"].push(random_opponent_copy_data);
+                    }
+
+                    var chosen_target_copy_enchantment_card_name = Constants.cards.filter(searchCard => searchCard.ID == chosen_target_copy_enchantment[i].cardID)[0].card_name;
+                    obj.message.reply(`you chose to cast **${targetCardFromLibrary.card_name}** on **${chosen_target_copy_enchantment_card_name}**!`);
+                  }
+
+                  var updateRandomOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(randomOpponentHand)}', mtg_currentBattlefield='${JSON.stringify(randomOpponentBattlefield)}' WHERE mtg_userID='${random_opponent.id}';`;
+                  await HandleConnection.callDBFunction("MYSQL-fireAndForget", updateRandomOpponentGameDataQuery);
+
+                  var updateGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(selfHand)}', mtg_currentBattlefield='${JSON.stringify(selfBattlefield)}' WHERE mtg_userID='${obj.id}';`;
+                  await HandleConnection.callDBFunction("MYSQL-fireAndForget", updateGameDataQuery);
+
+                  Constants.removeIDRequest(random_opponent.id);
+              }
+            }
+            if (targetCardFromLibrary.type.toLowerCase().includes('creature'))
+            {
+               var copy_data = {
+                power: chosen_target[0].power,
+                cardID: chosen_target[0].cardID,
+                fieldID: returnNewID(),
+                ownerID: obj.id,
+                isTapped: true,
+                strength: chosen_target[0].strength,
+                permanent: chosen_target[0].permanent,
+                attributes: chosen_target[0].attributes,
+                equipped_cards: [],
+                isDeclaredAttacker: false,
+                isDeclaredDefender: false
+              };
+
+                selfBattlefield["creatures"].push(copy_data);
+
+                var updateGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(selfHand)}', mtg_currentBattlefield='${JSON.stringify(selfBattlefield)}' WHERE mtg_userID='${obj.id}';`;
+                await HandleConnection.callDBFunction("MYSQL-fireAndForget", updateGameDataQuery);
+            }
+            if (targetCardFromLibrary.type.toLowerCase().includes('land'))
+            { 
+
+              var copy_data = {
+                  //power: chosen_target[0].power,
+                  cardID: chosen_target[0].cardID,
+                  fieldID: returnNewID(),
+                  ownerID: obj.id,
+                  isTapped: false,
+                  //strength: chosen_target[0].strength,
+                  //permanent: chosen_target[0].permanent,
+                  //attributes: JSON.parse(chosen_target[0].attributes),
+                  equipped_cards: [],
+                  //isDeclaredAttacker: false,
+                  //isDeclaredDefender: false
+                  permanent: true,
+                  colors: chosen_target[0].colors
+              };
+
+                selfBattlefield["lands"].push(copy_data);
+
+                var updateGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(selfHand)}', mtg_currentBattlefield='${JSON.stringify(selfBattlefield)}' WHERE mtg_userID='${obj.id}';`;
+                await HandleConnection.callDBFunction("MYSQL-fireAndForget", updateGameDataQuery);
+              return;
+            }
+
+            //opponentHand.hand.push(target.cardID);
+          });
+
+          //console.log(chosen_target);
+        }
+        else if (copy_source == "opponent")
+        {
+            obj.message.channel.send(`<@${obj.id}> -> this card source is still being worked on!`);
+        }
+
+        Constants.removeIDRequest(obj.id);
         break;
       case 'heal':
         obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
@@ -390,6 +638,142 @@ function isNonLandCard(card)
 {
   return card.startsWith("MTG");
 }
+
+function isAcceptableTarget(RowData, hand, battlefield, lookIn, permanentType)
+{
+    //console.log(RowData);
+    var acceptable = false;
+    //console.log(permanentType);
+
+    lookIn.forEach((field) => {
+      if (field == "battlefield") {
+        var battlefieldJSON = JSON.parse(battlefield);
+
+        //console.log(battlefieldJSON);
+
+        if (permanentType == "non_land") {
+
+          if (battlefieldJSON["enchantments"].length > 0)
+          {
+            acceptable = true;
+            //return true;
+          }
+
+          if (battlefieldJSON["creatures"].length > 0)
+          {
+            acceptable = true;
+            //return true;
+          }
+
+        }
+        else if (permanentType == "creature") {
+          if (battlefieldJSON["creatures"].length > 0)
+          {
+            acceptable = true;
+            //return true;
+          }
+        }
+        else if (permanentType == "enchantment") {
+          if (battlefieldJSON["enchantments"].length > 0)
+          {
+            acceptable = true;
+            //return true;
+          }
+        }
+        else if (permanentType == "land") {
+          if (battlefieldJSON["lands"].length > 0)
+          {
+            acceptable = true;
+            //return true;
+          }
+        }
+      }
+      if (field == "hand") {
+        var handJSON = JSON.parse(hand);
+
+        //console.log(handJSON);
+
+        var handData = [];
+
+        hand.hand.forEach((id) => {
+            var cardFromLibrary = id.startsWith("MTG") ? Constants.cards.filter(card => card.ID == id)[0] : Constants.lands.filter(land => land.ID == id)[0];
+
+            handData.push(cardFromLibrary);
+        });
+
+        if (hand.hand.length > 0)
+        {
+          //acceptable = true;
+
+          handData.forEach((card) => {
+            if (card.type.includes(permanentType))
+              acceptable = true;
+          });
+          //return true;
+        }
+      }
+    });
+
+    return acceptable;
+}
+
+async function getRandomOpponent(callerId, guildID, permanentType, lookIn)
+{
+    var commandRequestsString = `'${callerId}'`;
+    if (Constants.commandRequests.length > 0)
+      commandRequestsString += `,`;
+
+    Constants.commandRequests.forEach(function(id)
+    {
+      if (Constants.commandRequests.indexOf(id) == Constants.commandRequests.length - 1)
+        commandRequestsString += `'${id}'`;
+      else
+        commandRequestsString += `'${id}',`
+    });
+
+    //var possibleTargets = [];
+
+    //var findTargetQuery = `SELECT mtg_user.mtg_userID, mtg_user.mtg_health, mtg_user.mtg_guilds, mtg_gamedata.mtg_userID, mtg_gamedata.mtg_currentBattlefield, mtg_gamedata.mtg_currentHand FROM mtg_user, mtg_gamedata WHERE mtg_user.mtg_userID NOT IN (${commandRequestsString}) AND mtg_user.mtg_userID <> '${callerId}' AND JSON_EXTRACT(mtg_user.mtg_guilds, '$.${Constants.guildPrefix}${guildID}.optedInToServer') > 0 AND mtg_user.mtg_health > 0 GROUP BY mtg_user.mtg_userID, mtg_gamedata.mtg_userID order by rand() LIMIT 30;`;
+    var findTargetQuery = `SELECT ud.mtg_userID, ud.mtg_health, ud.mtg_guilds, gd.mtg_userID, gd.mtg_currentBattlefield, gd.mtg_currentHand FROM mtg_user AS ud INNER JOIN mtg_gamedata AS gd ON ud.mtg_userID = gd.mtg_userID WHERE ud.mtg_userID NOT IN (${commandRequestsString}) AND ud.mtg_userID <> '${callerId}' AND JSON_EXTRACT(ud.mtg_guilds, '$.${Constants.guildPrefix}${guildID}.optedInToServer') > 0 AND ud.mtg_health > 0 GROUP BY ud.mtg_userID, gd.mtg_userID order by rand() LIMIT 30;`;
+    //console.log(findTargetQuery);
+    var targetData = await HandleConnection.callDBFunction("MYSQL-returnQuery", findTargetQuery);
+
+    //console.log(targetData);
+    //console.log(targetData[0].mtg_gamedata);
+
+    if (targetData == undefined || targetData == null || targetData.length <= 0)
+    {
+      //obj.message.reply(" there is currently no one available to be attacked!");
+      //Constants.removeIDRequest(obj.id);
+      return null;
+    }
+
+    var filteredOpponents = targetData.filter(RowData => isAcceptableTarget(RowData, RowData.gd.mtg_currentHand, RowData.gd.mtg_currentBattlefield, lookIn, permanentType))
+
+    if (filteredOpponents.length <= 0)
+    {
+      console.log(`filteredOpponents empty`)
+      return null;
+    }
+
+    var chosenOpponent = filteredOpponents[Math.floor((Math.random() * filteredOpponents.length))];
+    //var chosenOpponent = targetData
+
+    //var gameDataQuery = `SELECT * from mtg_gamedata WHERE mtg_userID = '${chosenOpponent.mtg_userID}'`;
+    //var gameDataResult = await HandleConnection.callDBFunction("MYSQL-returnQuery", gameDataQuery);
+
+    var opponentData = {
+      id: chosenOpponent.ud.mtg_userID,
+      mtg_currentHand: chosenOpponent.gd.mtg_currentHand,
+      mtg_currentBattlefield: chosenOpponent.gd.mtg_currentBattlefield
+    }
+
+    //console.log(opponentData);
+
+    return opponentData;
+}
+
+
 async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand = false, hand = null, cardFromLibrary = null, descriptionText = "")
 {
   var selectedCreature = null;
@@ -411,7 +795,7 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
   .setDescription(`Card Attributes: ${description}\n\n${descriptionText}`)
   .setColor(Constants.color_codes.black)
 
-  if (permanentType.toLowerCase() == 'untapped_creature' || permanentType.toLowerCase() == 'tapped_creature' || permanentType.toLowerCase() == 'equipped_creature' || permanentType.toLowerCase() == 'creature' || permanentType.toLowerCase() == 'non_land')
+  if (permanentType.toLowerCase() == 'untapped_creature' || permanentType.toLowerCase() == 'tapped_creature' || permanentType.toLowerCase() == 'equipped_creature' || permanentType.toLowerCase() == 'creature' || permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == 'enchantment')
   {
     //var creatures = battlefield["creatures"];
     //emojis =
@@ -435,7 +819,9 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
       {
           //console.log(emojis[i]);
 
-          if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1))
+          var cardFromDeck = Constants.cards.filter(searchCard => searchCard.ID == creature.cardID)[0];
+
+          if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1) || (permanentType.toLowerCase() == 'enchantment' && !cardFromDeck.type.includes('enchantment')))
           {  }
           else {
 
@@ -453,6 +839,29 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
             emoji_index++;
           }
       });
+
+      await forEach(battlefield["enchantments"], async (creature) =>
+      {
+          //console.log(emojis[i]);
+
+          /*if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1))
+          {  }
+          else {*/
+          if (permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == "enchantment") {
+            var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID)[0];
+
+            //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
+            //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
+            //var legendaryStatus = cardFromLibrary.legendary ? "- Legendary" : "";
+            //var isTapped = creature.isTapped ? `<:tapped:${Constants.emoji_id.tapped}> *(tapped)*` : ``;
+            //var creatureStats = `${cardFromLibrary.power + Constants.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + Constants.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
+            //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
+
+            emojiPairs[emojis[emoji_index]] = creature;
+            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${cardFromLibrary.description}`, false);
+            emoji_index++;
+          }
+      });
     }
     else {
       await forEach(hand.hand, async (cardInHand) =>
@@ -461,6 +870,21 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
           if ((permanentType.toLowerCase() == 'creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'non_land' && !isNonLandCard(cardInHand)))
           {  }
+          else if (permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == "enchantment")
+          {
+            var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID)[0];
+
+            //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
+            //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
+            //var legendaryStatus = cardFromLibrary.legendary ? "- Legendary" : "";
+            //var isTapped = creature.isTapped ? `<:tapped:${Constants.emoji_id.tapped}> *(tapped)*` : ``;
+            //var creatureStats = `${cardFromLibrary.power + Constants.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + Constants.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
+            //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
+
+            emojiPairs[emojis[emoji_index]] = cardInHand;
+            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${cardFromLibrary.description}`, false);
+            emoji_index++;
+          }
           else {
 
             var cardFromLibrary = Constants.cards.filter(search => search.ID == cardInHand)[0];
@@ -850,6 +1274,16 @@ var local = {
     Constants.SQL.emit('check-user-exists', obj)
   },
 
+  getopponent:async function(cmd, args)
+  {
+    var msgOwnerID = cmd.author.id;
+    var channelId = cmd.channel.id;
+
+    var randomOpponent = await getRandomOpponent(msgOwnerID, cmd.channel.guild.id, "creature", ["battlefield"]);
+
+    //console.log(`opponent: ${randomOpponent}`);
+  },
+
   afterCheckUser:async function(obj)
   {
       if (obj.result.length < 1)
@@ -1125,6 +1559,8 @@ var local = {
                 return;
               }
 
+              cardObj["target"] = userID;
+
               for(i = 0; i < chosen_target.length; i++)
               {
                 if (permanentType.includes('creature'))
@@ -1132,17 +1568,21 @@ var local = {
                   var indexOfCreature = opponentBattlefield["creatures"].indexOf(chosen_target[i]);
                   opponentBattlefield["creatures"][indexOfCreature].equipped_cards.push(cardObj.fieldID);
                   opponentBattlefield["enchantments"].push(cardObj);
+                  currentBattlefield["enchantments"].push(cardObj);
                 }
                 else if (permanentType.includes('lands'))
                 {
                   var indexOfLand = opponentBattlefield["lands"].indexOf(chosen_target[i]);
                   opponentBattlefield["lands"][indexOfLand].equipped_cards.push(cardObj.fieldID);
                   opponentBattlefield["enchantments"].push(cardObj);
+                  currentBattlefield["enchantments"].push(cardObj);
                 }
               }
 
               var updateOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(opponentHand)}', mtg_currentBattlefield='${JSON.stringify(opponentBattlefield)}' WHERE mtg_userID='${userID}';`;
               await HandleConnection.callDBFunction("MYSQL-returnQuery", updateOpponentGameDataQuery);
+
+              Constants.removeIDRequest(userID)
             }
             else {
               console.log('unknown enchantment type');
@@ -1206,3 +1646,4 @@ var local = {
 
 module.exports = local;
 HandleFunctionCall.RegisterFunction(["p", "pc", "play", "playcard"], local.playcard);
+HandleFunctionCall.RegisterFunction(["get"], local.getopponent);
