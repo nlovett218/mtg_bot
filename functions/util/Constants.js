@@ -25,7 +25,7 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.5.16", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.6.4", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   bot_webhook_authorization: 'mtg_kotd_webhook_top_gg',
@@ -907,7 +907,7 @@ var local = {
       for (i = 0; i < local.cards.length; i++)
       {
         card = local.cards[i];//.ID.startsWith("LAND") ? Constants.lands.filter(search => search.ID == Constants.cards[i])[0] : Constants.cards.filter(search => search.ID == hand.hand[i])[0];
-        
+
         var cardNameArray = card.ID.startsWith("MTG") ? card.card_name.toLowerCase().split('') : card.land.toLowerCase().split('');
         var cardIDArray = card.ID.toLowerCase().split('');
 
