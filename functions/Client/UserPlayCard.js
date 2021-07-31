@@ -1679,9 +1679,9 @@ var local = {
             {
               var cardFromLibrary = chosen_target[i].startsWith("MTG") ? Constants.cards.filter(card => card.ID == chosen_target[i])[0] : Constants.lands.filter(land => land.ID == chosen_target[i])[0];
               if (i >= chosen_target.length)
-                chosen_cards += chosen_target[i].cardID.startsWith("MTG") ? cardFromLibrary.card_name + "|" : cardFromLibrary.land + "|";
+                chosen_cards += chosen_target[i].startsWith("MTG") ? cardFromLibrary.card_name + "|" : cardFromLibrary.land + "|";
               else
-                chosen_cards += chosen_target[i].cardID.startsWith("MTG") ? cardFromLibrary.card_name : cardFromLibrary.land;
+                chosen_cards += chosen_target[i].startsWith("MTG") ? cardFromLibrary.card_name : cardFromLibrary.land;
             }
             else {
               var cardFromLibrary = chosen_target[i].cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == chosen_target[i].cardID)[0] : Constants.lands.filter(land => land.ID == chosen_target[i].cardID)[0];
