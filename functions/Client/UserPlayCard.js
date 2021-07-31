@@ -797,7 +797,7 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
   .setDescription(`Card Attributes: ${description}\n\n${descriptionText}`)
   .setColor(Constants.color_codes.black)
 
-  if (permanentType.toLowerCase() == 'untapped_creature' || permanentType.toLowerCase() == 'tapped_creature' || permanentType.toLowerCase() == 'equipped_creature' || permanentType.toLowerCase() == 'creature' || permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == 'enchantment')
+  if (permanentType.toLowerCase() == 'untapped_creature' || permanentType.toLowerCase() == 'tapped_creature' || permanentType.toLowerCase() == 'equipped_creature' || permanentType.toLowerCase() == 'creature' || permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == 'enchantment' || permanentType.toLowerCase() == 'land')
   {
     //var creatures = battlefield["creatures"];
     //emojis =
@@ -817,13 +817,15 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
     if (!isHand)
     {
+      var lands = [];
+
       await forEach(battlefield["creatures"], async (creature) =>
       {
           //console.log(emojis[i]);
 
           var cardFromDeck = Constants.cards.filter(searchCard => searchCard.ID == creature.cardID)[0];
 
-          if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1) || (permanentType.toLowerCase() == 'enchantment' && !cardFromDeck.type.includes('enchantment')))
+          if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1) || (permanentType.toLowerCase() == 'enchantment' && !cardFromDeck.type.includes('enchantment')) || (permanentType.toLowerCase() == 'land'))
           {  }
           else {
 
@@ -865,17 +867,19 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
           }
       });
 
-      var lands = [];
-
       await forEach(battlefield["lands"], async (land) =>
       {
           //console.log(emojis[i]);
+
+          //console.log(land.cardID);
 
           /*if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1))
           {  }
           else {*/
           if (permanentType.toLowerCase() == 'land') {
             var cardFromLibrary = Constants.lands.filter(search => search.ID == land.cardID)[0];
+
+            //console.log(cardFromLibrary.ID);
 
             //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
             //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
@@ -885,8 +889,8 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
             //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
 
             if (!lands.includes(cardFromLibrary.ID)) {
-              emojiPairs[emojis[emoji_index]] = creature;
-              embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name}`, false);
+              emojiPairs[emojis[emoji_index]] = land;
+              embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.land}`, false);
               emoji_index++;
               lands.push(cardFromLibrary.ID);
             }
@@ -986,6 +990,8 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
               var card = emojiPairs[reactions[i]._emoji.name];
 
+              //console.log(card);
+
               if (!isHand)
               {
                 var indexOfCardOnBattlefield_creatures = battlefield["creatures"].indexOf(card);
@@ -1027,6 +1033,8 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
         }*/
 
       });
+
+      //console.log(targets);
 
   return targets;
 }
@@ -1671,16 +1679,16 @@ var local = {
             {
               var cardFromLibrary = chosen_target[i].startsWith("MTG") ? Constants.cards.filter(card => card.ID == chosen_target[i])[0] : Constants.lands.filter(land => land.ID == chosen_target[i])[0];
               if (i >= chosen_target.length)
-                chosen_cards += cardFromLibrary.card_name + "|";
+                chosen_cards += chosen_target[i].cardID.startsWith("MTG") ? cardFromLibrary.card_name + "|" : cardFromLibrary.land + "|";
               else
-                chosen_cards += cardFromLibrary.card_name;
+                chosen_cards += chosen_target[i].cardID.startsWith("MTG") ? cardFromLibrary.card_name : cardFromLibrary.land;
             }
             else {
               var cardFromLibrary = chosen_target[i].cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == chosen_target[i].cardID)[0] : Constants.lands.filter(land => land.ID == chosen_target[i].cardID)[0];
               if (i >= chosen_target.length)
-                chosen_cards += cardFromLibrary.card_name + "|";
+                chosen_cards += chosen_target[i].cardID.startsWith("MTG") ? cardFromLibrary.card_name + "|" : cardFromLibrary.land + "|";
               else
-                chosen_cards += cardFromLibrary.card_name;
+                chosen_cards += chosen_target[i].cardID.startsWith("MTG") ? cardFromLibrary.card_name : cardFromLibrary.land;
             }
           }
         }
