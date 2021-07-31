@@ -25,7 +25,7 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.6.4", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.6.8", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   bot_webhook_authorization: 'mtg_kotd_webhook_top_gg',
@@ -1528,8 +1528,74 @@ var local = {
     //console.log("Tiers Checked | " + acceptedTiers.length);
 
     return acceptedTiers;
-  }
+  },
 
+  triggerEvent:async function(caller, fieldID = null, event)
+  {
+    var obj = {
+      eventCalled: event,
+      callerId: caller,
+      target: fieldID 
+    };
+    
+    local.battle_events[event].callback(obj);
+  },
+
+  battle_events_functions: {
+
+     onCardDraw:function(obj)
+     {
+
+     },
+
+     onBeginTurn:function(obj)
+     {
+
+     },
+
+     onEnterBattlefield:function(obj)
+     {
+
+     },
+
+     onCreatureDeath:function(obj)
+     {
+
+     },
+
+     onDamageDealt:function(obj)
+     {
+
+     }
+
+  },
+
+  battle_events: {
+    onEnterBattlefield: {
+      //event: new Events.EventEmitter(),
+      callback: ["battle_events_functions"]["onEnterBattlefield"]
+    },
+    onCardDraw: {
+      //event: new Events.EventEmitter(),
+      callback: ["battle_events_functions"]["onCardDraw"]
+    },
+    onBeginTurn: {
+      //event: new Events.EventEmitter(),
+      callback: ["battle_events_functions"]["onBeginTurn"]
+    },
+    onCreatureDeath: {
+      //event: new Events.EventEmitter(),
+      callback: ["battle_events_functions"]["onCreatureDeath"]
+    },
+    onBeginTurn: {
+      //event: new Events.EventEmitter(),
+      callback: ["battle_events_functions"]["onBeginTurn"]
+    },
+    onDamageDealt: {
+      //event: new Events.EventEmitter(),
+      callback: ["battle_events_functions"]["onDamageDealt"]
+    },
+  },
 };
 
 /*Number.prototype.NaN = function(num) {
