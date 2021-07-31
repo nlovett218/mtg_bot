@@ -910,6 +910,7 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
           else if (permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == "enchantment")
           {
             var cardFromLibrary = Constants.cards.filter(search => search.ID == cardInHand)[0];
+            var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
 
             //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
             //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
@@ -919,12 +920,13 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
             //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
 
             emojiPairs[emojis[emoji_index]] = cardInHand;
-            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${cardFromLibrary.description}`, false);
+            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${description}`, false);
             emoji_index++;
           }
           else if (permanentType.toLowerCase() == 'land' && !isNonLandCard(cardInHand))
           {
             var cardFromLibrary = Constants.lands.filter(search => search.ID == cardInHand)[0];
+            var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
 
             //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
             //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
@@ -935,7 +937,7 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
             if (!lands.includes(cardFromLibrary.ID)){
               emojiPairs[emojis[emoji_index]] = cardInHand;
-              embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${cardFromLibrary.description}`, false);
+              embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${description}`, false);
               emoji_index++;
               lands.push(cardFromLibrary.ID);
             }
@@ -943,6 +945,7 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
           else {
 
             var cardFromLibrary = Constants.cards.filter(search => search.ID == cardInHand)[0];
+            var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
 
             //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
             //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
