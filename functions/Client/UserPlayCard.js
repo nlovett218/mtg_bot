@@ -884,7 +884,7 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
             //var creatureStats = `${cardFromLibrary.power + Constants.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + Constants.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
             //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
 
-            if (!hands.includes(cardFromLibrary.ID)) {
+            if (!lands.includes(cardFromLibrary.ID)) {
               emojiPairs[emojis[emoji_index]] = creature;
               embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name}`, false);
               emoji_index++;
@@ -918,7 +918,7 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
             embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${cardFromLibrary.description}`, false);
             emoji_index++;
           }
-          else if (permanentType.toLowerCase() == 'land')
+          else if (permanentType.toLowerCase() == 'land' && !isNonLandCard(cardInHand))
           {
             var cardFromLibrary = Constants.lands.filter(search => search.ID == cardInHand)[0];
 
