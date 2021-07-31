@@ -25,7 +25,7 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.6.8", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.7.0", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   bot_webhook_authorization: 'mtg_kotd_webhook_top_gg',
