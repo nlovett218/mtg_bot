@@ -907,7 +907,7 @@ var local = {
       for (i = 0; i < local.cards.length; i++)
       {
         card = local.cards[i];//.ID.startsWith("LAND") ? Constants.lands.filter(search => search.ID == Constants.cards[i])[0] : Constants.cards.filter(search => search.ID == hand.hand[i])[0];
-
+        
         var cardNameArray = card.ID.startsWith("MTG") ? card.card_name.toLowerCase().split('') : card.land.toLowerCase().split('');
         var cardIDArray = card.ID.toLowerCase().split('');
 
@@ -1078,7 +1078,7 @@ var local = {
       }
 
       if (search.cardObj.description != null && search.cardObj.description != undefined) {
-        var description = local.fragmentText(ctx, search.cardObj.description, 130);
+        var description = local.fragmentText(ctx, search.cardObj.description, 160);
 
         //console.log(description);
 
@@ -1101,14 +1101,14 @@ var local = {
 
           if (i <= 0 && local.containsSpecialAttributes(description[i])) {
             //console.log("print bold");
-            ctx.font = 'bold 28px sans';//'28px matrix';
+            ctx.font = 'bold 22px sans';//'28px matrix';
       	    ctx.fillStyle = '#000000';
       	    ctx.fillText(description[i], 50, 445 + (i * 30));
           }
           else {
             //console.log("print non-bold");
             var bold = local.containsSpecialAttributes(description[i]) ? `bold ` : ``;
-            ctx.font = `${bold}28px sans`;//'28px matrix';
+            ctx.font = `${bold}22px sans`;//'28px matrix';
             ctx.fillStyle = '#000000';
             ctx.fillText(description[i], 50, 445 + (i * 30));
           }
