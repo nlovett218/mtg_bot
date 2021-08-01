@@ -56,6 +56,8 @@ Constants.MDB.on('success', async function()
 });
 
 Constants.SQL.on('success', async function() {
+  console.log("Setting permanent type checkers...");
+  Constants.client.emit('set-permanent-types');
   console.log("Getting available images...");
   Constants.client.emit('refresh-images');
   console.log("Getting guild admins...");
@@ -87,6 +89,19 @@ Constants.SQL.on('success', async function() {
 
   console.log("Initiating listen server");
   Constants.client.emit('initiate-listen-server');
+});
+
+Constants.client.on('set-permanent-types', () => {
+  Constants.specialPermanentTypes["non_land"].checker = Constants._TypeValidation.isNonLandCard;
+  Constants.specialPermanentTypes["creature"].checker = Constants._TypeValidation.isCreature;
+  Constants.specialPermanentTypes["equipped_creature"].checker = Constants._TypeValidation.isEquippedCreature;
+  Constants.specialPermanentTypes["tapped_creature"].checker = Constants._TypeValidation.isTappedCreature;
+  Constants.specialPermanentTypes["untapped_creature"].checker = Constants._TypeValidation.isUntappedCreature;
+  Constants.specialPermanentTypes["spells"].checker = Constants._TypeValidation.isInstantOrSorcerySpell;
+  Constants.specialPermanentTypes["enchantment"].checker = Constants._TypeValidation.isEnchantment;
+  Constants.specialPermanentTypes["land"].checker = Constants._TypeValidation.isLand;
+  Constants.specialPermanentTypes["tapped_land"].checker = Constants._TypeValidation.isTappedLand;
+  Constants.specialPermanentTypes["untapped_land"].checker = Constants._TypeValidation.isUntappedLand;
 });
 
 Constants.client.on('guildCreate', guild => {

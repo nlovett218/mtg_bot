@@ -797,8 +797,8 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
   .setDescription(`Card Attributes: ${description}\n\n${descriptionText}`)
   .setColor(Constants.color_codes.black)
 
-  if (permanentType.toLowerCase() == 'untapped_creature' || permanentType.toLowerCase() == 'tapped_creature' || permanentType.toLowerCase() == 'equipped_creature' || permanentType.toLowerCase() == 'creature' || permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == 'enchantment' || permanentType.toLowerCase() == 'land')
-  {
+  //if (permanentType.toLowerCase() == 'untapped_creature' || permanentType.toLowerCase() == 'tapped_creature' || permanentType.toLowerCase() == 'equipped_creature' || permanentType.toLowerCase() == 'creature' || permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == 'enchantment' || permanentType.toLowerCase() == 'land')
+  //{
     //var creatures = battlefield["creatures"];
     //emojis =
     //emojiPairs = {};
@@ -821,15 +821,22 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
       await forEach(battlefield["creatures"], async (creature) =>
       {
-          //console.log(emojis[i]);
+          var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID)[0];
 
-          var cardFromDeck = Constants.cards.filter(searchCard => searchCard.ID == creature.cardID)[0];
+          var typeValidationObj = {
+            callerId: obj.id,
+            targetId: id,
+            fieldId: creature.fieldID,
+            cardObjToCheck: cardFromLibrary,
+            battlefieldObj: battlefield,
+            handObj: null,
+            isHand: false,
+            isBattlefield: true,
+            types: Constants.specialPermanentTypes[permanentType].types
+          };
 
-          if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1) || (permanentType.toLowerCase() == 'enchantment' && !cardFromDeck.type.includes('enchantment')) || (permanentType.toLowerCase() == 'land'))
-          {  }
-          else {
-
-            var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID)[0];
+          if (Constants.specialPermanentTypes[permanentType].checker(typeValidationObj))
+          {
 
             var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
             var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
@@ -844,56 +851,55 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
           }
       });
 
-      await forEach(battlefield["enchantments"], async (creature) =>
+      await forEach(battlefield["enchantments"], async (enchantment) =>
       {
-          //console.log(emojis[i]);
+          var cardFromLibrary = Constants.cards.filter(search => search.ID == enchantment.cardID)[0];
 
-          /*if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1))
-          {  }
-          else {*/
-          if (permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == "enchantment") {
-            var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID)[0];
+          var typeValidationObj = {
+            callerId: obj.id,
+            targetId: id,
+            fieldId: enchantment.fieldID,
+            cardObjToCheck: cardFromLibrary,
+            battlefieldObj: battlefield,
+            handObj: null,
+            isHand: false,
+            isBattlefield: true,
+            types: Constants.specialPermanentTypes[permanentType].types
+          };
 
-            //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
-            //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
-            //var legendaryStatus = cardFromLibrary.legendary ? "- Legendary" : "";
-            //var isTapped = creature.isTapped ? `<:tapped:${Constants.emoji_id.tapped}> *(tapped)*` : ``;
-            //var creatureStats = `${cardFromLibrary.power + Constants.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + Constants.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
-            //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
+          if (Constants.specialPermanentTypes[permanentType].checker(typeValidationObj))
+          {
+            var description = (cardFromDeck.description == null || cardFromDeck.description == undefined) ? "No Description Available" : cardFromDeck.description.replace("[NEW_LINE]", " - ");
 
-            emojiPairs[emojis[emoji_index]] = creature;
-            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${cardFromLibrary.description}`, false);
+            emojiPairs[emojis[emoji_index]] = enchantment;
+            embed.addField(`${cardFromDeck.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromDeck.card_name} - ${description}`, false);
             emoji_index++;
           }
       });
 
       await forEach(battlefield["lands"], async (land) =>
       {
-          //console.log(emojis[i]);
+          var cardFromLibrary = Constants.lands.filter(search => search.ID == land.cardID)[0];
 
-          //console.log(land.cardID);
+          var typeValidationObj = {
+            callerId: obj.id,
+            targetId: id,
+            fieldId: land.fieldID,
+            cardObjToCheck: cardFromLibrary,
+            battlefieldObj: battlefield,
+            handObj: null,
+            isHand: false,
+            isBattlefield: true,
+            types: Constants.specialPermanentTypes[permanentType].types
+          };
 
-          /*if ((permanentType.toLowerCase() == 'untapped_creature' && creature.isTapped) || (permanentType.toLowerCase() == 'tapped_creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'equipped_creature' && creature.equipped_cards.length < 1))
-          {  }
-          else {*/
-          if (permanentType.toLowerCase() == 'land') {
-            var cardFromLibrary = Constants.lands.filter(search => search.ID == land.cardID)[0];
+          if (Constants.specialPermanentTypes[permanentType].checker(typeValidationObj))
+          {
+            var description = (cardFromDeck.description == null || cardFromDeck.description == undefined) ? "No Description Available" : cardFromDeck.description.replace("[NEW_LINE]", " - ");
 
-            //console.log(cardFromLibrary.ID);
-
-            //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
-            //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
-            //var legendaryStatus = cardFromLibrary.legendary ? "- Legendary" : "";
-            //var isTapped = creature.isTapped ? `<:tapped:${Constants.emoji_id.tapped}> *(tapped)*` : ``;
-            //var creatureStats = `${cardFromLibrary.power + Constants.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + Constants.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
-            //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
-
-            if (!lands.includes(cardFromLibrary.ID)) {
-              emojiPairs[emojis[emoji_index]] = land;
-              embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.land}`, false);
-              emoji_index++;
-              lands.push(cardFromLibrary.ID);
-            }
+            emojiPairs[emojis[emoji_index]] = land;
+            embed.addField(`${cardFromDeck.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromDeck.card_name} - ${description}`, false);
+            emoji_index++;
           }
       });
     }
@@ -905,7 +911,33 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
       {
           //console.log(emojis[i]);
 
-          if ((permanentType.toLowerCase() == 'creature' && !creature.isTapped) || (permanentType.toLowerCase() == 'non_land' && !isNonLandCard(cardInHand)))
+          var cardFromLibrary = cardInHand.startsWith("MTG") ? Constants.cards.filter(search => search.ID == cardInHand)[0] : Constants.lands.filter(search => search.ID == cardInHand)[0];
+
+          //if (cardFromLibrary == undefined || cardFromLibrary == null)
+            //continue;
+
+          var typeValidationObj = {
+            callerId: obj.id,
+            targetId: id,
+            fieldId: null,
+            cardObjToCheck: cardFromLibrary,
+            battlefieldObj: battlefield,
+            handObj: hand.hand,
+            isHand: true,
+            isBattlefield: false,
+            types: Constants.specialPermanentTypes[permanentType].types
+          };
+
+          if (Constants.specialPermanentTypes[permanentType].checker(typeValidationObj))
+          {
+            var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+
+            emojiPairs[emojis[emoji_index]] = cardInHand;
+            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${description}`, false);
+            emoji_index++;
+          }
+
+          /*if (permanentType.toLowerCase() == 'non_land' && !isNonLandCard(cardInHand))
           {  }
           else if (permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == "enchantment")
           {
@@ -957,10 +989,10 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
             emojiPairs[emojis[emoji_index]] = cardInHand;
             embed.addField(`${cardFromLibrary.type.capitalize()} ${legendaryStatus}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} ${isCreatureDisplayStatsString}`, false);
             emoji_index++;
-          }
+          }*/
       });
     }
-  }
+  //}
 
   var keys = Object.keys(emojiPairs);
 

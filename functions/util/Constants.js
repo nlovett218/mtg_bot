@@ -102,6 +102,261 @@ var local = {
 
   ],
 
+  _TypeValidation: {
+
+    isNonLandCard:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return args.types.includes(args.cardObjToCheck.type);
+
+      return args.types.includes(args.cardObjToCheck.type);
+    },
+
+    isLand:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return args.types.includes(args.cardObjToCheck.type);
+
+      return args.types.includes(args.cardObjToCheck.type);
+    },
+
+    isCreature:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return args.types.includes(args.cardObjToCheck.type);
+
+      return args.types.includes(args.cardObjToCheck.type);
+    },
+
+    isEquippedCreature:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return false;
+
+      if (args.isHand) {
+        //return args.types.includes(args.cardObjToCheck.type);
+        return false;
+      }
+
+      if (args.isBattlefield) {
+        var battlefield = args.battlefieldObj;
+
+        var fieldId = args.fieldId;
+
+        if (fieldId == null || fieldId == undefined)
+          return false;
+
+        var creature = battlefield["creatures"][battlefield["creatures"].indexOf(battlefield["creatures"].filter(creature => creature.fieldID == fieldId)[0])];
+
+        return creature.equipped_cards.length > 0;
+      }
+    },
+
+    isInstantOrSorcerySpell:function(args)
+    {
+      //console.log(args);
+
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return args.types.includes(args.cardObjToCheck.type);
+
+      return args.types.includes(args.cardObjToCheck.type);
+    },
+
+    isEnchantment:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return args.types.includes(args.cardObjToCheck.type);
+
+      return args.types.includes(args.cardObjToCheck.type);
+    },
+
+    isTappedCreature:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return false;
+
+      if (args.isHand) {
+        //return args.types.includes(args.cardObjToCheck.type);
+        return false;
+      }
+
+      if (args.isBattlefield) {
+        var battlefield = args.battlefieldObj;
+
+        var fieldId = args.fieldId;
+
+        if (fieldId == null || fieldId == undefined)
+          return false;
+
+        var creature = battlefield["creatures"][battlefield["creatures"].indexOf(battlefield["creatures"].filter(creature => creature.fieldID == fieldId)[0])];
+
+        return (creature.isTapped == true);
+      }
+
+      return false;
+    },
+
+    isUntappedCreature:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return false;
+
+      if (args.isHand) {
+        //return args.types.includes(args.cardObjToCheck.type);
+        return false;
+      }
+
+      if (args.isBattlefield) {
+        var battlefield = args.battlefieldObj;
+
+        var fieldId = args.fieldId;
+
+        if (fieldId == null || fieldId == undefined)
+          return false;
+
+        var creature = battlefield["creatures"][battlefield["creatures"].indexOf(battlefield["creatures"].filter(creature => creature.fieldID == fieldId)[0])];
+
+        return (creature.isTapped == false);
+      }
+
+      return false;
+    },
+
+    isTappedLand:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return false;
+
+      if (args.isHand) {
+        //return args.types.includes(args.cardObjToCheck.type);
+        return false;
+      }
+
+      if (args.isBattlefield) {
+        var battlefield = args.battlefieldObj;
+
+        var fieldId = args.fieldId;
+
+        if (fieldId == null || fieldId == undefined)
+          return false;
+
+        var land = battlefield["lands"][battlefield["lands"].indexOf(battlefield["lands"].filter(creature => creature.fieldID == fieldId)[0])];
+
+        return (land.isTapped == true);
+      }
+
+      return false;
+    },
+
+    isUntappedLand:function(args)
+    {
+      if (args == null || args == undefined)
+        return false;
+
+      if ((args.battlefieldObj == null || args.battlefieldObj == undefined) || (args.handObj == null && args.handObj == undefined))
+        return false;
+
+      if (args.isHand) {
+        //return args.types.includes(args.cardObjToCheck.type);
+        return false;
+      }
+
+      if (args.isBattlefield) {
+        var battlefield = args.battlefieldObj;
+
+        var fieldId = args.fieldId;
+
+        if (fieldId == null || fieldId == undefined)
+          return false;
+
+        var land = battlefield["lands"][battlefield["lands"].indexOf(battlefield["lands"].filter(creature => creature.fieldID == fieldId)[0])];
+
+        return (land.isTapped == false);
+      }
+
+      return false;
+    }
+  },
+
+  specialPermanentTypes: {
+    'non_land': {
+      types: ['creature', 'enchantment', 'instant', 'sorcery'],
+      checker: null//[_TypeValidation].isNonLandCard
+     },
+
+    'creature': {
+      types: ['creature'],
+      checker: null//_TypeValidation.isCreature
+     },
+
+    'equipped_creature': {
+      types: ['creature'],
+      checker: null//_TypeValidation.isEquippedCreature
+     },
+
+    'tapped_creature': {
+      types: ['creature'],
+      checker: null//_TypeValidation.isTappedCreature
+     },
+
+    'untapped_creature': {
+      types: ['creature'],
+      checker: null//_TypeValidation.isUntappedCreature
+     },
+
+    'spells': {
+      types: ['instant', 'sorcery'],
+      checker: null//_TypeValidation.isInstantOrSorcerySpell
+     },
+
+    'enchantment': {
+      types: ['enchatment', 'enchantment - aura'],
+      checker: null//_TypeValidation.isEnchantment
+     },
+
+    'land': {
+      types: ['land', 'basic land'],
+      checker: null//_TypeValidation.isLand
+     },
+
+    'tapped_land': {
+      types: ['land', 'basic land'],
+      checker: null//_TypeValidation.isTappedLand
+     },
+
+     'untapped_land': {
+      types: ['land', 'basic land'],
+      checker: null//_TypeValidation.isTappedLand
+     }
+  },
+
   imageDir: './Images/',
   templateCardFileName: 'black_template.jpg',
   imageFileExtension: '.png',
