@@ -895,11 +895,26 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
           if (Constants.specialPermanentTypes[permanentType].checker(typeValidationObj))
           {
-            var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+            var description = '';
+            var card_name = '';
 
-            emojiPairs[emojis[emoji_index]] = land;
-            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${description}`, false);
-            emoji_index++;
+            if (land.cardID.startsWith("MTG"))
+            {
+              description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+              card_name = cardFromLibrary.card_name;
+            }
+            else
+            {
+              description = Constants.returnManaByColorTable(cardFromLibrary.colors);
+              card_name = cardFromLibrary.land;
+            }
+
+            if (!lands.includes(land.cardID)) {
+              emojiPairs[emojis[emoji_index]] = land;
+              embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${card_name} - ${description}`, false);
+              emoji_index++;
+              lands.push(land.cardID);
+            }
           }
       });
     }
@@ -930,11 +945,26 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
           if (Constants.specialPermanentTypes[permanentType].checker(typeValidationObj))
           {
-            var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+            var description = '';
+            var card_name = '';
 
-            emojiPairs[emojis[emoji_index]] = cardInHand;
-            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${description}`, false);
-            emoji_index++;
+            if (cardInHand.startsWith("MTG"))
+            {
+              description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+              card_name = cardFromLibrary.card_name;
+            }
+            else
+            {
+              description = Constants.returnManaByColorTable(cardFromLibrary.colors);
+              card_name = cardFromLibrary.land;
+            }
+
+            if (!lands.includes(cardInHand)) {
+              emojiPairs[emojis[emoji_index]] = cardInHand;
+              embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${card_name} - ${description}`, false);
+              emoji_index++;
+              lands.push(cardInHand)
+            }
           }
 
           /*if (permanentType.toLowerCase() == 'non_land' && !isNonLandCard(cardInHand))
