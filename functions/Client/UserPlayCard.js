@@ -895,10 +895,10 @@ async function chooseTargets(obj, id, battlefield, amount, permanentType, isHand
 
           if (Constants.specialPermanentTypes[permanentType].checker(typeValidationObj))
           {
-            var description = (cardFromDeck.description == null || cardFromDeck.description == undefined) ? "No Description Available" : cardFromDeck.description.replace("[NEW_LINE]", " - ");
+            var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
 
             emojiPairs[emojis[emoji_index]] = land;
-            embed.addField(`${cardFromDeck.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromDeck.card_name} - ${description}`, false);
+            embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${description}`, false);
             emoji_index++;
           }
       });
