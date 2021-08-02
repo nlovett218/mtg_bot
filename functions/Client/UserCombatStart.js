@@ -330,7 +330,7 @@ var local = {
         {
           attackerHealAmount += matchUp.attackingCreature.attributes.includes('lifelink') ? matchUp.attackingCreature.lifeGained : 0;
           checked.push(creature);
-          damageDealtToPlayer += creature.damageDealtToPlayer;
+          damageDealtToPlayer += matchUp.attackingCreature.damageDealtToPlayer;
           for (i = 0; i < creature.damageDealt.length; i++)
           {
               //console.log(creature);
