@@ -25,9 +25,41 @@ async function declareCreatures(obj, attackerState, defenderState, msg)
 
       var indexOfCardOnBattlefield = currentBattlefield["creatures"].indexOf(card);
       var creature = Constants.cards.filter(search => search.ID == currentBattlefield["creatures"][indexOfCardOnBattlefield].cardID)[0];
-      creaturesToDeclare.push(creature.card_name);
-      currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
-      currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+      var attributes = JSON.parse(creature.attributes);
+
+      if (attributes != undefined && attributes != null) 
+      {
+        if (attributes.creature_attributes != undefined && attributes.creature_attributes != null) 
+        {
+            if (attackerState) 
+            {
+              if (!attributes.creature_attributes.includes('defender')) 
+              {
+                creaturesToDeclare.push(creature.card_name);
+                currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+                currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+              }
+            }
+            else if (defenderState) 
+            {
+              creaturesToDeclare.push(creature.card_name);
+              currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+              currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+            }
+        }
+        else
+        {
+          creaturesToDeclare.push(creature.card_name);
+          currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+          currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+        }
+      }
+      else
+      {
+        creaturesToDeclare.push(creature.card_name);
+        currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+        currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+      }
     }
 
     if (creaturesToDeclare.length > 0) {
@@ -77,6 +109,22 @@ async function declareCreatures(obj, attackerState, defenderState, msg)
   {
       var creature = unTappedCreatures[i];
 
+      var creatureFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID)[0];
+      var attributes = JSON.parse(creatureFromLibrary.attributes);
+
+      if (attributes != undefined && attributes != null) 
+      {
+        if (attributes.creature_attributes != undefined && attributes.creature_attributes != null) 
+        {
+          if (attackerState)
+          {
+            if (attributes.creature_attributes.includes('defender')) {
+              continue;
+            }
+          }
+        }
+      }
+
       if (creature.isTapped)
         continue;
 
@@ -119,10 +167,43 @@ async function declareCreatures(obj, attackerState, defenderState, msg)
 
               var indexOfCardOnBattlefield = currentBattlefield["creatures"].indexOf(card);
               var creature = Constants.cards.filter(search => search.ID == currentBattlefield["creatures"][indexOfCardOnBattlefield].cardID)[0];
-              creaturesToDeclare.push(creature.card_name);
-              currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
-              currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+              var attributes = JSON.parse(creature.attributes);
+
+              if (attributes != undefined && attributes != null) 
+              {
+                if (attributes.creature_attributes != undefined && attributes.creature_attributes != null) 
+                {
+                    if (attackerState) 
+                    {
+                      if (!attributes.creature_attributes.includes('defender')) 
+                      {
+                        creaturesToDeclare.push(creature.card_name);
+                        currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+                        currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+                      }
+                    }
+                    else if (defenderState) 
+                    {
+                      creaturesToDeclare.push(creature.card_name);
+                      currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+                      currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+                    }
+                }
+                else
+                {
+                  creaturesToDeclare.push(creature.card_name);
+                  currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+                  currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+                }
+              }
+              else
+              {
+                creaturesToDeclare.push(creature.card_name);
+                currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+                currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+              }
             }
+
         }
         catch (err)
         {
@@ -149,9 +230,41 @@ async function declareCreatures(obj, attackerState, defenderState, msg)
 
           var indexOfCardOnBattlefield = currentBattlefield["creatures"].indexOf(card);
           var creature = Constants.cards.filter(search => search.ID == currentBattlefield["creatures"][indexOfCardOnBattlefield].cardID)[0];
-          creaturesToDeclare.push(creature.card_name);
-          currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
-          currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+          var attributes = JSON.parse(creature.attributes);
+
+          if (attributes != undefined && attributes != null) 
+          {
+            if (attributes.creature_attributes != undefined && attributes.creature_attributes != null) 
+            {
+                if (attackerState) 
+                {
+                  if (!attributes.creature_attributes.includes('defender')) 
+                  {
+                    creaturesToDeclare.push(creature.card_name);
+                    currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+                    currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+                  }
+                }
+                else if (defenderState) 
+                {
+                  creaturesToDeclare.push(creature.card_name);
+                  currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+                  currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+                }
+            }
+            else
+            {
+              creaturesToDeclare.push(creature.card_name);
+              currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+              currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+            }
+          }
+          else
+          {
+            creaturesToDeclare.push(creature.card_name);
+            currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+            currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+          }
         }
 
         /*console.log(`After a minute, only ${collected.size} out of 4 reacted.`);

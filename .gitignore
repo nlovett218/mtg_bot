@@ -1,2 +1,3 @@
 *.ldb
 output/
+do_not_git/

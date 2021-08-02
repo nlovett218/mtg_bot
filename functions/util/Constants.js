@@ -52,7 +52,7 @@ var local = {
   cardStealAmount: 3,
   startingLandAmount: 24,
   startingCardAmount: 40,
-  attackCooldown: 15,
+  attackCooldown: 1,
   drawCooldown: 3,
   claimCooldown: 44640,
   dailyCooldown: 1440,
