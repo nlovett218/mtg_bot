@@ -878,6 +878,8 @@ var local = {
           fight.attackingCreature.damageDealtToPlayer += result.attacker.damageDealtToPlayer;
           fight.attackingCreature.lifeGained += result.attacker.DamageInflicted;
           fight.defendingCreatures[i].lifeGained += result.defender.DamageInflicted;
+          fight.defendingCreatures[i].strength = result.defender.LeftoverStrength;
+          fight.defendingCreatures[i].power = result.defender.LeftoverPower;
 
           if (i == (fight.defendingCreatures.length - 1) && fight.attackingCreature.attributes.includes('trample') && !result.attackerDied && result.defenderDied) //if trample
             leftoverAttackerPower += result.attacker.LeftoverPower;
