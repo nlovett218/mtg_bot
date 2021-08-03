@@ -253,6 +253,8 @@ var local = {
     //message.awaitReactions(filter, { max: 1, time: 60000, errors: ['time', 'duplicate'] })
     var query = `UPDATE mtg_gamedata SET mtg_currentPhase='1', mtg_allowedCardDraw='1', mtg_allowedLandCast='1', mtg_currentHand='${JSON.stringify(currentHand)}', mtg_currentBattlefield='${JSON.stringify(currentBattlefield)}' WHERE mtg_userID='${obj.id}'`;
     await HandleConnection.callDBFunction("MYSQL-fireAndForget", query);
+
+    Constants.triggerEvent(obj.id, null, null, "onBeginTurn", null, null, null, obj);
   },
 
   goToPhaseTwo:async function(obj, gameDataObj)

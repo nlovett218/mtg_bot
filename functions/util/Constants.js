@@ -1517,110 +1517,6 @@ var local = {
       return lines;
   },
 
-  drawMultilineText:function(ctx, text, opts) {
-
-    // Default options
-    if (!opts)
-        opts = {}
-    if (!opts.font)
-        opts.font = 'sans-serif'
-    if (typeof opts.stroke == 'undefined')
-        opts.stroke = false
-    if (typeof opts.verbose == 'undefined')
-        opts.verbose = false
-    if (!opts.rect)
-        opts.rect = {
-            x: 0,
-            y: 0,
-            width: ctx.canvas.width,
-            height: ctx.canvas.height
-        }
-    if (!opts.lineHeight)
-        opts.lineHeight = 1.1
-    if (!opts.minFontSize)
-        opts.minFontSize = 30
-    if (!opts.maxFontSize)
-        opts.maxFontSize = 100
-    // Default log function is console.log - Note: if verbose il false, nothing will be logged anyway
-    if (!opts.logFunction)
-        opts.logFunction = function (message) { console.log(message) }
-
-
-    const words = require('words-array')(text)
-    if (opts.verbose) opts.logFunction('Text contains ' + words.length + ' words')
-    var lines = []
-    let y;  //New Line
-
-    // Finds max font size  which can be used to print whole text in opts.rec
-
-    
-    let lastFittingLines;                       // declaring 4 new variables (addressing issue 3)
-    let lastFittingFont;
-    let lastFittingY;
-    let lastFittingLineHeight;
-    for (var fontSize = opts.minFontSize; fontSize <= opts.maxFontSize; fontSize++) {
-
-        // Line height
-        var lineHeight = fontSize * opts.lineHeight
-
-        // Set font for testing with measureText()
-        ctx.font = ' ' + fontSize + 'px ' + opts.font
-
-        // Start
-        var x = opts.rect.x;
-        y = lineHeight; //modified line        // setting to lineHeight as opposed to fontSize (addressing issue 1)
-        lines = []
-        var line = ''
-
-        // Cycles on words
-
-       
-        for (var word of words) {
-            // Add next word to line
-            var linePlus = line + word + ' '
-            // If added word exceeds rect width...
-            if (ctx.measureText(linePlus).width > (opts.rect.width)) {
-                // ..."prints" (save) the line without last word
-                lines.push({ text: line, x: x, y: y })
-                // New line with ctx last word
-                line = word + ' '
-                y += lineHeight
-            } else {
-                // ...continues appending words
-                line = linePlus
-            }
-        }
-
-        // "Print" (save) last line
-        lines.push({ text: line, x: x, y: y })
-
-        // If bottom of rect is reached then breaks "fontSize" cycle
-            
-        if (y > opts.rect.height)                                           
-            break;
-            
-        lastFittingLines = lines;               // using 4 new variables for 'step back' (issue 3)
-        lastFittingFont = ctx.font;
-        lastFittingY = y;
-        lastFittingLineHeight = lineHeight;
-
-    }
-
-    lines = lastFittingLines;                   // assigning last fitting values (issue 3)                    
-    ctx.font = lastFittingFont;                                                                   
-    if (opts.verbose) opts.logFunction("Font used: " + ctx.font);
-    const offset = opts.rect.y - lastFittingLineHeight / 2 + (opts.rect.height - lastFittingY) / 2;     // modifying calculation (issue 2)
-    for (var line of lines)
-        // Fill or stroke
-        if (opts.stroke)
-            ctx.strokeText(line.text.trim(), line.x, line.y + offset) //modified line
-        else
-            ctx.fillText(line.text.trim(), line.x, line.y + offset) //modified line
-
-    // Returns font size
-    return fontSize
-  },
-
   getEquippedEnchantments:function(type, creature, enchantments)
   {
     var totalPower = 0;
@@ -1664,7 +1560,7 @@ var local = {
       return totalStrength;
   },
 
-  displayNewCard: async function(obj, id)
+  displayNewCard: async function(obj, id, target = null)
   {
     var getCardByID = id.startsWith("LAND") ? local.lands.filter(search => search.ID == id)[0] : local.cards.filter(search => search.ID == id)[0];
 
@@ -1683,11 +1579,19 @@ var local = {
        mana_string = id.startsWith("LAND") ? local.returnManaByColorTable(getCardByID.colors) : local.getManaString(JSON.parse(getCardByID.mana_cost));
     }
 
+    var username = obj.message.author.username;
+
+    if (target != null)
+    {
+      var opponent = await obj.message.guild.members.fetch(opponentID);
+      username = opponent.username;
+    }
+
     var embed = new local.Discord.MessageEmbed();
     if (id.startsWith("LAND"))
     {
       //console.log(obj.result[0].mtg_startingDeck);
-      embed.setTitle("You Drew a Land!");
+      embed.setTitle(`${username} Drew a Land!`);
       embed.setColor(local.color_codes["green"]);
       embed.setDescription(mana_string + getCardByID.land);
     }
@@ -1711,7 +1615,7 @@ var local = {
       //console.log(keys[max_color_cost_index]);
       //var keys = [x for x,y in dic.items() if y ==maxx];
       //var colorIndex = colors.values().indexOf(Math.max.apply(Math, colors.values()));
-      embed.setTitle(`You drew a ${getCardByID.type}!`);
+      embed.setTitle(`${username} drew a ${getCardByID.type}!`);
       embed.setColor(local.color_codes["green"]); //keys[max_color_cost_index]]);
       embed.setDescription(mana_string + getCardByID.card_name);
     }
@@ -1733,7 +1637,7 @@ var local = {
         //embed.setImage(`attachment://${image}`);
     }
 
-    await obj.message.reply({embed});
+    await obj.message.channel.send({embed});
     return;
   },
 
@@ -1785,72 +1689,1114 @@ var local = {
     return acceptedTiers;
   },
 
-  triggerEvent:async function(caller, fieldID = null, event)
+  isAcceptableTarget:function(RowData, hand, battlefield, lookIn, permanentType)
   {
+      //console.log(RowData);
+      var acceptable = false;
+      //console.log(permanentType);
+
+      lookIn.forEach((field) => {
+        if (field == "battlefield") {
+          var battlefieldJSON = JSON.parse(battlefield);
+
+          //console.log(battlefieldJSON);
+
+          if (permanentType == "non_land") {
+
+            if (battlefieldJSON["enchantments"].length > 0)
+            {
+              acceptable = true;
+              //return true;
+            }
+
+            if (battlefieldJSON["creatures"].length > 0)
+            {
+              acceptable = true;
+              //return true;
+            }
+
+          }
+          else if (permanentType == "creature") {
+            if (battlefieldJSON["creatures"].length > 0)
+            {
+              acceptable = true;
+              //return true;
+            }
+          }
+          else if (permanentType == "enchantment") {
+            if (battlefieldJSON["enchantments"].length > 0)
+            {
+              acceptable = true;
+              //return true;
+            }
+          }
+          else if (permanentType == "land") {
+            if (battlefieldJSON["lands"].length > 0)
+            {
+              acceptable = true;
+              //return true;
+            }
+          }
+        }
+        if (field == "hand") {
+          var handJSON = JSON.parse(hand);
+
+          //console.log(handJSON);
+
+          var handData = [];
+
+          hand.hand.forEach((id) => {
+              var cardFromLibrary = id.startsWith("MTG") ? local.cards.filter(card => card.ID == id)[0] : local.lands.filter(land => land.ID == id)[0];
+
+              handData.push(cardFromLibrary);
+          });
+
+          if (hand.hand.length > 0)
+          {
+            //acceptable = true;
+
+            handData.forEach((card) => {
+              if (card.type.includes(permanentType))
+                acceptable = true;
+            });
+            //return true;
+          }
+        }
+      });
+
+      return acceptable;
+  },
+
+  getRandomOpponent:async function(callerId, guildID, permanentType, lookIn)
+  {
+      var commandRequestsString = `'${callerId}'`;
+      if (local.commandRequests.length > 0)
+        commandRequestsString += `,`;
+
+      local.commandRequests.forEach(function(id)
+      {
+        if (local.commandRequests.indexOf(id) == local.commandRequests.length - 1)
+          commandRequestsString += `'${id}'`;
+        else
+          commandRequestsString += `'${id}',`
+      });
+
+      //var possibleTargets = [];
+
+      console.log(`callerID: ${callerId}`);
+      console.log(`guildID: ${guildID}`);
+
+      //var findTargetQuery = `SELECT mtg_user.mtg_userID, mtg_user.mtg_health, mtg_user.mtg_guilds, mtg_gamedata.mtg_userID, mtg_gamedata.mtg_currentBattlefield, mtg_gamedata.mtg_currentHand FROM mtg_user, mtg_gamedata WHERE mtg_user.mtg_userID NOT IN (${commandRequestsString}) AND mtg_user.mtg_userID <> '${callerId}' AND JSON_EXTRACT(mtg_user.mtg_guilds, '$.${Constants.guildPrefix}${guildID}.optedInToServer') > 0 AND mtg_user.mtg_health > 0 GROUP BY mtg_user.mtg_userID, mtg_gamedata.mtg_userID order by rand() LIMIT 30;`;
+      var findTargetQuery = `SELECT ud.mtg_userID, ud.mtg_health, ud.mtg_deaths, ud.mtg_guilds, gd.mtg_userID, gd.mtg_currentBattlefield, gd.mtg_currentHand, gd.mtg_currentDeck FROM mtg_user AS ud INNER JOIN mtg_gamedata AS gd ON ud.mtg_userID = gd.mtg_userID WHERE ud.mtg_userID NOT IN (${commandRequestsString}) AND ud.mtg_userID <> '${callerId}' AND JSON_EXTRACT(ud.mtg_guilds, '$.${local.guildPrefix}${guildID}.optedInToServer') > 0 AND ud.mtg_health > 0 GROUP BY ud.mtg_userID, gd.mtg_userID order by rand() LIMIT 30;`;
+      //console.log(findTargetQuery);
+      var targetData = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", findTargetQuery);
+
+      //console.log(targetData);
+      //console.log(targetData[0].mtg_gamedata);
+
+      if (targetData == undefined || targetData == null || targetData.length <= 0)
+      {
+        console.log("there is currently no one available to be attacked!");
+        //Constants.removeIDRequest(obj.id);
+        return null;
+      }
+
+      var filteredOpponents = [];
+
+      if (permanentType != null && lookIn != null) {
+        filteredOpponents = targetData.filter(RowData => local.isAcceptableTarget(RowData, RowData.gd.mtg_currentHand, RowData.gd.mtg_currentBattlefield, lookIn, permanentType));
+      }
+      else
+      {
+        filteredOpponents = targetData.filter(RowData => parseInt(RowData.ud.mtg_health) > 0);//local.isAcceptableTarget(RowData, RowData.gd.mtg_currentHand, RowData.gd.mtg_currentBattlefield, lookIn, permanentType))
+      }
+
+      if (filteredOpponents.length <= 0)
+      {
+        console.log(`filteredOpponents empty`)
+        return null;
+      }
+
+      var chosenOpponent = filteredOpponents[Math.floor((Math.random() * filteredOpponents.length))];
+      //var chosenOpponent = targetData
+
+      //var gameDataQuery = `SELECT * from mtg_gamedata WHERE mtg_userID = '${chosenOpponent.mtg_userID}'`;
+      //var gameDataResult = await HandleConnection.callDBFunction("MYSQL-returnQuery", gameDataQuery);
+
+      var opponentData = {
+        id: chosenOpponent.ud.mtg_userID,
+        userData: chosenOpponent.ud,
+        gameData: chosenOpponent.gd,
+        mtg_currentHand: chosenOpponent.gd.mtg_currentHand,
+        mtg_currentBattlefield: chosenOpponent.gd.mtg_currentBattlefield
+      }
+
+      //console.log(opponentData);
+
+      return opponentData;
+  },
+
+  damagePlayer:async function(obj, caller, target, fieldID = null, amount, displayOutput = true)
+  {
+    //var t
+    if (target == null)
+    {
+      console.log(`getting random opponent in guild ${obj.guildId}`);
+      target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+      //console.log(target);
+    }
+
+    if (target == null) {
+      return console.log("no opponents found");
+    }
+
+    var opponentID = target.userData.mtg_userID;
+
+    await local.until(_ => local.commandRequests.includes(opponentID) == false);
+    local.pushIDRequest(opponentID);
+
+    var opponent_health = parseInt(target.userData.mtg_health);
+
+    opponent_health -= amount;
+
+    var opponent_deaths = parseInt(target.userData.mtg_deaths);
+
+    var caller_username = obj.message.author.username;
+    var target_obj = await obj.message.guild.members.fetch(opponentID);
+    var target_username = target_obj.user.username;
+
+    //console.log(obj);
+    obj.message.channel.send(`**${caller_username}** dealt **${amount}** damage directly to **${target_username}!**`);
+
+    var damageDealt = parseInt(obj.result.result[0].mtg_user.mtg_damagedealt) + amount;
+    var opponentDeck = JSON.parse(target.gameData.mtg_currentDeck);
+    var opponentBattlefield = JSON.parse(target.gameData.mtg_currentBattlefield);
+    var opponentHand = JSON.parse(target.gameData.mtg_currentHand);
+    var currentDeck = obj.deck;
+
+    var currentBattlefield = obj.battlefield;
+    var currentDeck = obj.deck;
+    var currentHand = obj.hand;
+
+
+    if (opponent_health <= 0)
+    {
+        var deaths = opponent_deaths + 1;
+        //var health = opponent_health;
+
+        var receivedCards = [];
+        var receivedCardNameString = "";
+        var currencyReceived = 0;
+
+        var now = local.moment().format(local.momentTimeFormat);
+
+        var newHand = {
+          hand: [],
+          graveyard: [
+
+          ]
+        };
+
+        var newDeck = {
+          deck: []
+        };
+
+        var newBattlefield = {
+          "lands": [
+
+          ],
+          "creatures": [
+
+          ],
+          "enchantments": [
+
+          ]
+        };
+
+        for (i = 0; i< local.cardStealAmount; i++)
+        {
+          //console.log (opponent_gameDataObj);
+          var cardIDFromDeck = opponentDeck.deck[Math.floor((Math.random() * opponentDeck.deck.length))]
+
+          if (cardIDFromDeck != null) {
+            var cardFromLibrary = cardIDFromDeck.startsWith("LAND") ? local.lands.filter(search => search.ID == cardIDFromDeck)[0] : local.cards.filter(search => search.ID == cardIDFromDeck)[0];
+            receivedCards.push(cardFromLibrary);
+            currentDeck.deck.push(cardIDFromDeck);
+            var card_name = cardIDFromDeck.startsWith("LAND") ? cardFromLibrary.land : cardFromLibrary.card_name;
+            var mana_string = cardIDFromDeck.startsWith("LAND") ? local.returnManaByColorTable(cardFromLibrary.colors) : local.getManaString(JSON.parse(cardFromLibrary.mana_cost));
+            receivedCardNameString += mana_string + card_name + " (" + cardIDFromDeck + ")\n\t\t";
+            //console.log(mana_string);
+          }
+        }
+
+        currentDeck.deck = local.shuffle(currentDeck.deck);
+        var total = (opponentBattlefield.lands.length + opponentDeck.deck.length + opponentHand.graveyard.length);
+        var currencyReceived = local.baseCurrencyWinAmount + Math.floor((Math.random() * total));
+        var currencyUpdate = parseInt(obj.result.result[0].mtg_user.mtg_currency + currencyReceived);// / Constants.gemPercentage) * 100)).toFixed();
+        var kills = parseInt(obj.result.result[0].mtg_user.mtg_kills) + 1;
+
+        var XPReceived = local.baseXPWinAmount + Math.floor((Math.random() * currencyReceived));
+        var XPUpdate = parseInt(obj.result.result[0].mtg_user.mtg_rankxp + XPReceived);
+        var lastXPTier = local.returnTierByXP(obj.result.result[0].mtg_user.mtg_rankxp);
+        var newXPTier = local.returnTierByXP(XPUpdate);
+        var promotionString = lastXPTier != newXPTier ? `${local.emoji_id.balloon}**PROMOTION!!** You have reached ${newXPTier.emoji_id}${newXPTier.rank} Tier ${newXPTier.tierText}! ${local.emoji_id.balloon}\n\n` : '\n';
+
+
+        obj.message.reply(`you killed <@${opponentID}>!
+          You received <:currency:${local.emoji_id.currency}>${String(currencyReceived)}, <:exp:${local.emoji_id.exp}> ${XPReceived} XP and ${receivedCards.length} new cards were added to your deck!\n` +
+          `\t\t` + promotionString +
+          `\t\t` + receivedCardNameString
+        );
+
+        updateUserDataQuery = `UPDATE mtg_user SET mtg_damagedealt='${damageDealt}', mtg_currency='${currencyUpdate}', mtg_rankxp='${XPUpdate}', mtg_kills='${kills}' WHERE mtg_userID='${caller}'`;
+        updateGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentBattlefield='${JSON.stringify(currentBattlefield)}', mtg_currentDeck='${JSON.stringify(currentDeck)}' WHERE mtg_userID='${caller}';`;
+
+        updateOpponentUserDataQuery = `UPDATE mtg_user SET mtg_health='${opponent_health}', mtg_lastDeathDateTime=STR_TO_DATE('${now}','%m-%d-%Y %H:%i:%s'), mtg_deaths='${deaths}', mtg_reset='1' WHERE mtg_userID='${opponentID}';`;
+        updateOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentBattlefield='${JSON.stringify(newBattlefield)}', mtg_currentDeck='${JSON.stringify(newDeck)}', mtg_currentHand='${JSON.stringify(newHand)}' WHERE mtg_userID='${opponentID}';`;
+
+        await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateUserDataQuery);
+        await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateGameDataQuery);
+        await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentGameDataQuery);
+        await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentUserDataQuery);
+    }
+    else
+    {
+        var total = (opponentBattlefield.lands.length + opponentDeck.deck.length + opponentHand.graveyard.length);
+        var currencyReceived = local.baseCurrencyWinAmount + Math.floor((Math.random() * total));
+        var currencyUpdate = parseInt(obj.result.result[0].mtg_user.mtg_currency + currencyReceived);// / Constants.gemPercentage) * 100)).toFixed();
+        var kills = parseInt(obj.result.result[0].mtg_user.mtg_kills) + 1;
+
+        var XPReceived = local.baseXPWinAmount + Math.floor((Math.random() * currencyReceived));
+        var XPUpdate = parseInt(obj.result.result[0].mtg_user.mtg_rankxp + XPReceived);
+        var lastXPTier = local.returnTierByXP(obj.result.result[0].mtg_user.mtg_rankxp);
+        var newXPTier = local.returnTierByXP(XPUpdate);
+        var promotionString = lastXPTier != newXPTier ? `${local.emoji_id.balloon}**PROMOTION!!** You have reached ${newXPTier.emoji_id}${newXPTier.rank} Tier ${newXPTier.tierText}! ${local.emoji_id.balloon}\n\n` : '\n';
+
+        obj.message.reply(`you received <:currency:${local.emoji_id.currency}>${String(currencyReceived)}, <:exp:${local.emoji_id.exp}> ${XPReceived} XP!\n` + `\t\t` + promotionString);
+
+        var updateGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentBattlefield='${JSON.stringify(currentBattlefield)}' WHERE mtg_userID='${obj.id}';`;
+        var updateUserDataQuery = `UPDATE mtg_user SET mtg_damagedealt='${damageDealt}', mtg_currency='${currencyUpdate}', mtg_rankxp='${XPUpdate}' WHERE mtg_userID='${obj.id}'`;
+
+        var updateOpponentUserDataQuery = `UPDATE mtg_user SET mtg_health='${opponent_health}' WHERE mtg_userID='${opponentID}';`;
+        var updateOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentBattlefield='${JSON.stringify(opponentBattlefield)}' WHERE mtg_userID='${opponentID}';`;
+
+        await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateUserDataQuery);
+        await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateGameDataQuery);
+        await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentGameDataQuery);
+        await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentUserDataQuery);
+    }
+    //console.log(target);
+
+    local.removeIDRequest(opponentID);
+
+    //console.log(`deal ${amount} damage to ${target}`);
+  },
+
+  damageTarget:async function(obj, caller, target, fieldID = null, amount, displayOutput = true)
+  {
+
+  },
+
+  discardCard:async function(obj, caller, target, fieldID = null, amount, displayOutput = true, permanentType = "non_land")
+  {
+
+    if (target == null)
+    {
+      console.log(`getting random opponent in guild ${obj.guildId}`);
+      target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+      //console.log(target);
+    }
+
+    if (target == null) {
+      return console.log("no opponents found");
+    }
+
+    var opponentID = target.userData.mtg_userID;
+
+    await local.until(_ => local.commandRequests.includes(opponentID) == false);
+    local.pushIDRequest(opponentID);
+
+    var chosen_target = [];
+    var opponentDeck = JSON.parse(target.gameData.mtg_currentDeck);
+    var opponentBattlefield = JSON.parse(target.gameData.mtg_currentBattlefield);
+    var opponentHand = JSON.parse(target.gameData.mtg_currentHand);
+    var currentDeck = obj.deck;
+
+    var currentBattlefield = obj.battlefield;
+    var currentDeck = obj.deck;
+    var currentHand = obj.hand;
+
+    //var cardFromLibrary = cardObj.cardID.startsWith("MTG") ? local.cards.filter(card => card.ID == cardObj.cardID)[0] : local.lands.filter(land => land.ID == cardObj.cardID)[0];
+    chosen_target = await local.chooseTargets(obj.result, opponentID, opponentBattlefield, amount, permanentType, true, opponentHand, null, `Choose up to ${amount} '${permanentType}' permanent(s) to discard from player's hand:`);
+
+    //Constants.removeIDRequest(obj.id);
+    if (chosen_target == null || chosen_target.length < 1)
+    {
+      obj.message.channel.send(`<@${caller}> -> no targets were selected or no '${permanentType}' permanents were available to be targeted for selected user!`);
+      return;
+    }
+
+    //console.log(chosen_target);
+
+    await chosen_target.forEach(async (id) => {
+      opponentHand.hand.splice(opponentHand.hand.indexOf(id), 1);
+    });
+
+    updateOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(opponentHand)}' WHERE mtg_userID='${opponentID}';`;
+    await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentGameDataQuery);
+
+    //var cardName = card.cardID.startsWith("MTG") ? card.cardObj.card_name : card.cardObj.land;
+    var chosen_cards = ``;
+    if (chosen_target != null)
+    {
+      for (i = 0; i < chosen_target.length; i++)
+      {
+        if (typeof(chosen_target[i]) == typeof("STRING"))
+        {
+          var cardFromLibrary = chosen_target[i].startsWith("MTG") ? local.cards.filter(card => card.ID == chosen_target[i])[0] : local.lands.filter(land => land.ID == chosen_target[i])[0];
+          if (i >= chosen_target.length)
+            chosen_cards += chosen_target[i].startsWith("MTG") ? cardFromLibrary.card_name + "|" : cardFromLibrary.land + "|";
+          else
+            chosen_cards += chosen_target[i].startsWith("MTG") ? cardFromLibrary.card_name : cardFromLibrary.land;
+        }
+        else {
+          var cardFromLibrary = chosen_target[i].cardID.startsWith("MTG") ? local.cards.filter(card => card.ID == chosen_target[i].cardID)[0] : local.lands.filter(land => land.ID == chosen_target[i].cardID)[0];
+          if (i >= chosen_target.length)
+            chosen_cards += chosen_target[i].cardID.startsWith("MTG") ? cardFromLibrary.card_name + "|" : cardFromLibrary.land + "|";
+          else
+            chosen_cards += chosen_target[i].cardID.startsWith("MTG") ? cardFromLibrary.card_name : cardFromLibrary.land;
+        }
+      }
+    }
+    var chosen_target_string = chosen_target == null || chosen_target.length < 1 ? `` : `**${chosen_cards}**`;
+    obj.message.reply(`you chose to discard ${chosen_target_string}!`);
+
+    local.removeIDRequest(opponentID);
+  },
+
+
+  drawCard:async function(obj, caller, target, fieldID = null, amount, displayOutput = true)
+  {
+    //console.log(obj);
+    //console.log(caller);
+    //console.log(target);
+    //console.log(amount);
+    if (target != null) {
+
+      var gameData = await HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT * FROM mtg_gamedata WHERE mtg_userID=\'" + target + "\'");
+      //var jsonObj = res;//JSON.parse(res);
+      var gameDataObj = gameData[0].mtg_gamedata;
+      var userDataObj = obj.result.result[0].mtg_user;
+      var currentHand = JSON.parse(gameDataObj.mtg_currentHand);
+      var currentDeck = JSON.parse(gameDataObj.mtg_currentDeck);
+      var guildID = obj.message.guild.id;
+      var guilds = JSON.parse(userDataObj.mtg_guilds);
+      var guildObjID = `${Constants.guildPrefix}${guildID}`;
+
+      local.pushIDRequest(target);
+
+      var newCards = currentDeck.deck.splice(0, amount);
+      newCards.forEach(async function(newCard)
+      {
+        currentHand.hand.push(newCard);
+        await local.displayNewCard(obj, newCard, target);
+      });
+
+      var query = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(currentHand)}', mtg_currentDeck='${JSON.stringify(currentDeck)}' WHERE mtg_userID='${target}';`;
+      //var query2 = `UPDATE mtg_user SET mtg_lastCardDrawnDateTime=STR_TO_DATE('${Constants.moment(now).format(Constants.momentTimeFormat)}', '%m-%d-%Y %H:%i:%s') WHERE mtg_userID='${target}';`
+      await HandleConnection.callDBFunction("MYSQL-fireAndForget", query);
+      //await HandleConnection.callDBFunction("MYSQL-fireAndForget", query2);
+
+      for (i = 0; i < amount; i++){
+        await local.triggerEvent(caller, target, null, "onCardDraw", null, null, null, obj.result);
+      }
+    }
+  },
+
+
+
+  triggerEvent:async function(caller, target = null, fieldID = null, event, battlefieldObj = null, handObj = null, deckObj = null, resultObj = null)
+  {
+    if (resultObj == null)
+      return;
+
     var obj = {
+      result: resultObj,
+      message: resultObj.message,
       eventCalled: event,
+      guildId: resultObj.message.guild.id,
       callerId: caller,
-      target: fieldID 
+      targetPlayer: target,
+      target: fieldID,
+      battlefield: battlefieldObj,
+      hand: handObj,
+      deck: deckObj
     };
+
+    local.pushIDRequest(caller);
+
+    if (battlefieldObj == null) {
+      var userData = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT * FROM mtg_user WHERE mtg_userID=\'" + caller + "\'");
+      var gameData = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT * FROM mtg_gamedata WHERE mtg_userID=\'" + caller + "\'");
+
+      if (gameData == null || gameData.length < 1 || userData == null || userData.length < 1)
+      {
+        console.log(`No user data was found for '${caller}'!`);
+        //Constants.removeIDRequest(obj.id);
+        return;
+      }
+
+      obj.battlefield = JSON.parse(gameData[0].mtg_gamedata.mtg_currentBattlefield);
+      obj.hand = JSON.parse(gameData[0].mtg_gamedata.mtg_currentHand);
+      obj.deck = JSON.parse(gameData[0].mtg_gamedata.mtg_currentDeck);
+    }
+
+    if (local.battle_events_functions[event] == undefined){
+      console.log("ERROR: Unknown event function called!");
+      return null;
+    }
     
-    local.battle_events[event].callback(obj);
+    return local.battle_events_functions[event](obj);
+  },
+
+  processTrigger:async function(obj, objArray, type)
+  {
+    var cardTypeFunctions = {
+      "damage": local.damagePlayer,
+      "card_draw": local.drawCard,
+      "discard_opponent": local.discardCard,
+      //"destroy_permanent": local.destroyPermanent,
+      //"heal": local.healPlayer,
+      //"damage_creature": local.damageCreature,
+    }
+    objArray.forEach((objElement) => {
+      console.log("element: " + objElement);
+      var cardFromLibrary = local.cards.filter(search => search.ID == objElement.cardID)[0];
+
+      var attributes = JSON.parse(cardFromLibrary.attributes);
+
+      if (attributes != null)
+      {
+        console.log(`attributes not null`);
+        console.log(attributes);
+        if (attributes["cardType"] != null && attributes["cardType"] != undefined)
+        {
+          console.log(`attribute cardTypes not null`);
+          var cardTypes = attributes.cardType;
+
+          //console.log(cardTypes);
+
+          cardTypes.forEach((cardType) => {
+            //console.log(cardType);
+            if (cardTypeFunctions[cardType] != undefined) {
+
+              var cardTypeAttributes = attributes[cardType];
+
+              if (cardTypeAttributes != undefined && cardTypeAttributes != null) {
+
+                var amount = cardTypeAttributes.amount;
+                var source = cardTypeAttributes.source;
+
+                var target = source == "self" ? obj.callerId : obj.targetPlayer;
+
+                var permanentType = (cardTypeAttributes["permanent_type"] == null || cardTypeAttributes["permanent_type"] == undefined) ? "non_land" : cardTypeAttributes["permanent_type"];
+
+                console.log(permanentType);
+
+                cardTypeFunctions[cardType](obj, obj.callerId, target, obj.target, amount, true, permanentType);
+
+                console.log(`running event trigger function ${cardType}`);
+              }
+            }
+          });
+        }
+        else
+        {
+          console.log(`attributes cardTypes is null or undefined`);
+        }
+      }
+    })
   },
 
   battle_events_functions: {
 
-     onCardDraw:function(obj)
-     {
+     hasTrigger:function(cardID, trigger){
+       var card = local.cards.filter(search => search.ID == cardID)[0];
 
+       var attributes = JSON.parse(card.attributes);
+
+       if (attributes == undefined || attributes == null)
+         return false;
+
+       return attributes.triggers.includes(trigger);
      },
 
-     onBeginTurn:function(obj)
+     getMatchingTriggerCards:function(callerId, targetId = null, battlefield, type, trigger)
      {
+       if (battlefield == null)
+         return null;
 
+       if (type.toLowerCase() == 'creature'){
+         var creatures = battlefield["creatures"].filter(creature => local.battle_events_functions.hasTrigger(creature.cardID, trigger));
+
+         return creatures;
+       }
+       else if (type.toLowerCase() == 'enchantment')
+       {
+         var enchantments = battlefield["enchantments"].filter(enchantment => local.battle_events_functions.hasTrigger(enchantment.cardID, trigger));
+
+         return enchantments;
+       }
+
+
+       return null;
      },
 
-     onEnterBattlefield:function(obj)
+     onCardDraw:async function(obj)
      {
+       console.log("onCardDraw");
 
+       var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onCardDraw");
+       var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onCardDraw");
+
+       //console.log(creatures);
+       //console.log(enchantments);
+       //console.log(obj);
+
+       if (obj.result.result[0].mtg_user.mtg_reset == 1) {
+        //obj.message.reply(" you were killed recently. You must first get a new deck with \`m!begin\` before trying to play!");
+        return;
+       }
+
+       //console.log(obj.result);
+
+       var userDataObj = obj.result.result[0];
+       var guildID = obj.message.guild.id;
+       var guilds = JSON.parse(userDataObj.mtg_user.mtg_guilds);
+       var guildObjID = `${local.guildPrefix}${guildID}`;
+
+       if (guilds[guildObjID] == undefined || guilds[guildObjID].optedInToServer == 0) {
+        //obj.message.reply(" you must first opt in before you can draw cards!");
+        return;
+       }
+
+
+       if (obj.message != null)
+       {
+         console.log(`message not null`);
+         creatures.forEach((creature) => {
+           var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s card draw event was triggered!`);
+         });
+
+         enchantments.forEach((enchantment) => {
+           var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s card draw event was triggered!`);
+         });
+         
+       }
+       await local.processTrigger(obj, creatures, "creatures", "onCardDraw");
+       await local.processTrigger(obj, enchantments, "enchantments", "onCardDraw");
+
+       //console.log('');
+
+       local.removeIDRequest(obj.callerId);
      },
 
-     onCreatureDeath:function(obj)
+     onBeginTurn:async function(obj)
      {
+       console.log("onBeginTurn");
 
+       var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onBeginTurn");
+       var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onBeginTurn");
+
+       //console.log(creatures);
+       //console.log(enchantments);
+       //console.log(obj);
+
+       if (obj.result.result[0].mtg_user.mtg_reset == 1) {
+        //obj.message.reply(" you were killed recently. You must first get a new deck with \`m!begin\` before trying to play!");
+        return;
+       }
+
+       //console.log(obj.result);
+
+       var userDataObj = obj.result.result[0];
+       var guildID = obj.message.guild.id;
+       var guilds = JSON.parse(userDataObj.mtg_user.mtg_guilds);
+       var guildObjID = `${local.guildPrefix}${guildID}`;
+
+       if (guilds[guildObjID] == undefined || guilds[guildObjID].optedInToServer == 0) {
+        //obj.message.reply(" you must first opt in!");
+        return;
+       }
+
+
+       if (obj.message != null)
+       {
+         console.log(`message not null`);
+         creatures.forEach((creature) => {
+           var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s new turn event was triggered!`);
+         });
+
+         enchantments.forEach((enchantment) => {
+           var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s new turn event was triggered!`);
+         });
+         
+       }
+       await local.processTrigger(obj, creatures, "creatures", "onBeginTurn");
+       await local.processTrigger(obj, enchantments, "enchantments", "onBeginTurn");
+
+       //console.log('');
+
+       local.removeIDRequest(obj.callerId);
      },
 
-     onDamageDealt:function(obj)
+     onEnterBattlefield:async function(obj)
+     {
+       console.log("onEnterBattlefield");
+
+       var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onEnterBattlefield");
+       var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onEnterBattlefield");
+
+       //console.log(creatures);
+       //console.log(enchantments);
+       //console.log(obj);
+
+       if (obj.result.result[0].mtg_user.mtg_reset == 1) {
+        //obj.message.reply(" you were killed recently. You must first get a new deck with \`m!begin\` before trying to play!");
+        return;
+       }
+
+       //console.log(obj.result);
+
+       var userDataObj = obj.result.result[0];
+       var guildID = obj.message.guild.id;
+       var guilds = JSON.parse(userDataObj.mtg_user.mtg_guilds);
+       var guildObjID = `${local.guildPrefix}${guildID}`;
+
+       if (guilds[guildObjID] == undefined || guilds[guildObjID].optedInToServer == 0) {
+        //obj.message.reply(" you must first opt in!");
+        return;
+       }
+
+
+       if (obj.message != null)
+       {
+         console.log(`message not null`);
+         creatures.forEach((creature) => {
+           var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s battlefield entrance event was triggered!`);
+         });
+
+         enchantments.forEach((enchantment) => {
+           var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s battlefield entrance event was triggered!`);
+         });
+         
+       }
+       await local.processTrigger(obj, creatures, "creatures", "onEnterBattlefield");
+       await local.processTrigger(obj, enchantments, "enchantments", "onEnterBattlefield");
+
+       //console.log('');
+
+       local.removeIDRequest(obj.callerId);
+     },
+
+     onCreatureDeath:async function(obj)
+     {
+       console.log("onCreatureDeath");
+
+       var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onCreatureDeath");
+       var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onCreatureDeath");
+
+       //console.log(creatures);
+       //console.log(enchantments);
+       //console.log(obj);
+
+       if (obj.result.result[0].mtg_user.mtg_reset == 1) {
+        //obj.message.reply(" you were killed recently. You must first get a new deck with \`m!begin\` before trying to play!");
+        return;
+       }
+
+       //console.log(obj.result);
+
+       var userDataObj = obj.result.result[0];
+       var guildID = obj.message.guild.id;
+       var guilds = JSON.parse(userDataObj.mtg_user.mtg_guilds);
+       var guildObjID = `${local.guildPrefix}${guildID}`;
+
+       if (guilds[guildObjID] == undefined || guilds[guildObjID].optedInToServer == 0) {
+        //obj.message.reply(" you must first opt in!");
+        return;
+       }
+
+
+       if (obj.message != null)
+       {
+         console.log(`message not null`);
+         creatures.forEach((creature) => {
+           var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s creature death event was triggered!`);
+         });
+
+         enchantments.forEach((enchantment) => {
+           var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s creature death event was triggered!`);
+         });
+         
+       }
+       await local.processTrigger(obj, creatures, "creatures", "onCreatureDeath");
+       await local.processTrigger(obj, enchantments, "enchantments", "onCreatureDeath");
+
+       //console.log('');
+
+       local.removeIDRequest(obj.callerId);
+     },
+
+     onDamageDealt:async function(obj)
      {
 
      }
 
   },
 
-  battle_events: {
-    onEnterBattlefield: {
-      //event: new Events.EventEmitter(),
-      callback: ["battle_events_functions"]["onEnterBattlefield"]
-    },
-    onCardDraw: {
-      //event: new Events.EventEmitter(),
-      callback: ["battle_events_functions"]["onCardDraw"]
-    },
-    onBeginTurn: {
-      //event: new Events.EventEmitter(),
-      callback: ["battle_events_functions"]["onBeginTurn"]
-    },
-    onCreatureDeath: {
-      //event: new Events.EventEmitter(),
-      callback: ["battle_events_functions"]["onCreatureDeath"]
-    },
-    onBeginTurn: {
-      //event: new Events.EventEmitter(),
-      callback: ["battle_events_functions"]["onBeginTurn"]
-    },
-    onDamageDealt: {
-      //event: new Events.EventEmitter(),
-      callback: ["battle_events_functions"]["onDamageDealt"]
-    },
-  },
+  chooseTargets:async function(obj, id, battlefield, amount, permanentType, isHand = false, hand = null, cardFromLibrary = null, descriptionText = "")
+  {
+    var selectedCreature = null;
+    var emojis = local.emoji_letters.slice(0, 26);
+    var emojiPairs = {};
+    var targets = [];
+
+    const filter = (reaction, user) => {
+      //console.log(reaction);
+      return emojis.includes(reaction._emoji.name) && user.id == obj.id;
+    };
+
+    const member = await obj.message.guild.members.fetch(id);
+    const description = cardFromLibrary == null ? '' : cardFromLibrary.description;
+    const title = isHand ? `${member.user.username}'s Hand` : member.user.username + "\'s Battlefield";
+    const embed = new local.Discord.MessageEmbed()
+    //console.log(obj.result[0].mtg_startingDeck);
+    .setTitle(title)
+    .setDescription(`Card Attributes: ${description}\n\n${descriptionText}`)
+    .setColor(local.color_codes.black)
+
+    //if (permanentType.toLowerCase() == 'untapped_creature' || permanentType.toLowerCase() == 'tapped_creature' || permanentType.toLowerCase() == 'equipped_creature' || permanentType.toLowerCase() == 'creature' || permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == 'enchantment' || permanentType.toLowerCase() == 'land')
+    //{
+      //var creatures = battlefield["creatures"];
+      //emojis =
+      //emojiPairs = {};
+      /*if (!isHand)
+      {
+        if (battlefield["creatures"].length < 1)
+          return null;
+      }
+      else {
+        if (hand.hand.length < 1)
+          return null;
+      }*/
+
+      var emoji_index = 0;
+      //for (i = 0; i < battlefield["creatures"].length; i++)
+
+      if (!isHand)
+      {
+        var lands = [];
+
+        await forEach(battlefield["creatures"], async (creature) =>
+        {
+            var cardFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
+
+            var typeValidationObj = {
+              callerId: obj.id,
+              targetId: id,
+              fieldId: creature.fieldID,
+              cardObjToCheck: cardFromLibrary,
+              battlefieldObj: battlefield,
+              handObj: null,
+              isHand: false,
+              isBattlefield: true,
+              types: local.specialPermanentTypes[permanentType].types
+            };
+
+            if (local.specialPermanentTypes[permanentType].checker(typeValidationObj))
+            {
+
+              var isAttacking = creature.isDeclaredAttacker ? local.emoji_id.sword : '';
+              var isDefending = creature.isDeclaredDefender ? local.emoji_id.shield : '';
+              var legendaryStatus = cardFromLibrary.legendary ? "- Legendary" : "";
+              var isTapped = creature.isTapped ? `<:tapped:${local.emoji_id.tapped}> *(tapped)*` : ``;
+              var creatureStats = `${cardFromLibrary.power + local.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + local.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
+              var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
+
+              emojiPairs[emojis[emoji_index]] = creature;
+              embed.addField(`${cardFromLibrary.type.capitalize()} ${legendaryStatus}`, `${emojis[emoji_index]} ${isTapped} ${cardFromLibrary.card_name} ${isCreatureDisplayStatsString}`, false);
+              emoji_index++;
+            }
+        });
+
+        await forEach(battlefield["enchantments"], async (enchantment) =>
+        {
+            var cardFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
+
+            var typeValidationObj = {
+              callerId: obj.id,
+              targetId: id,
+              fieldId: enchantment.fieldID,
+              cardObjToCheck: cardFromLibrary,
+              battlefieldObj: battlefield,
+              handObj: null,
+              isHand: false,
+              isBattlefield: true,
+              types: local.specialPermanentTypes[permanentType].types
+            };
+
+            if (local.specialPermanentTypes[permanentType].checker(typeValidationObj))
+            {
+              var description = (cardFromDeck.description == null || cardFromDeck.description == undefined) ? "No Description Available" : cardFromDeck.description.replace("[NEW_LINE]", " - ");
+
+              emojiPairs[emojis[emoji_index]] = enchantment;
+              embed.addField(`${cardFromDeck.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromDeck.card_name} - ${description}`, false);
+              emoji_index++;
+            }
+        });
+
+        await forEach(battlefield["lands"], async (land) =>
+        {
+            var cardFromLibrary = local.lands.filter(search => search.ID == land.cardID)[0];
+
+            var typeValidationObj = {
+              callerId: obj.id,
+              targetId: id,
+              fieldId: land.fieldID,
+              cardObjToCheck: cardFromLibrary,
+              battlefieldObj: battlefield,
+              handObj: null,
+              isHand: false,
+              isBattlefield: true,
+              types: local.specialPermanentTypes[permanentType].types
+            };
+
+            if (local.specialPermanentTypes[permanentType].checker(typeValidationObj))
+            {
+              var description = '';
+              var card_name = '';
+
+              if (land.cardID.startsWith("MTG"))
+              {
+                description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+                card_name = cardFromLibrary.card_name;
+              }
+              else
+              {
+                description = local.returnManaByColorTable(cardFromLibrary.colors);
+                card_name = cardFromLibrary.land;
+              }
+
+              if (!lands.includes(land.cardID)) {
+                emojiPairs[emojis[emoji_index]] = land;
+                embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${card_name} - ${description}`, false);
+                emoji_index++;
+                lands.push(land.cardID);
+              }
+            }
+        });
+      }
+      else {
+
+        var lands = [];
+
+        console.log(hand);
+
+        await hand.hand.forEach(async (cardInHand) =>
+        {
+            //console.log(emojis[i]);
+
+            var cardFromLibrary = cardInHand.startsWith("MTG") ? local.cards.filter(search => search.ID == cardInHand)[0] : local.lands.filter(search => search.ID == cardInHand)[0];
+
+            //if (cardFromLibrary == undefined || cardFromLibrary == null)
+              //continue;
+
+            var typeValidationObj = {
+              callerId: obj.id,
+              targetId: id,
+              fieldId: null,
+              cardObjToCheck: cardFromLibrary,
+              battlefieldObj: battlefield,
+              handObj: hand.hand,
+              isHand: true,
+              isBattlefield: false,
+              types: local.specialPermanentTypes[permanentType].types
+            };
+
+            if (local.specialPermanentTypes[permanentType].checker(typeValidationObj))
+            {
+              var description = '';
+              var card_name = '';
+
+              if (cardInHand.startsWith("MTG"))
+              {
+                description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+                card_name = cardFromLibrary.card_name;
+              }
+              else
+              {
+                description = local.returnManaByColorTable(cardFromLibrary.colors);
+                card_name = cardFromLibrary.land;
+              }
+
+              if (!lands.includes(cardInHand)) {
+                emojiPairs[emojis[emoji_index]] = cardInHand;
+                embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${card_name} - ${description}`, false);
+                emoji_index++;
+                lands.push(cardInHand)
+              }
+            }
+
+            /*if (permanentType.toLowerCase() == 'non_land' && !isNonLandCard(cardInHand))
+            {  }
+            else if (permanentType.toLowerCase() == 'non_land' || permanentType.toLowerCase() == "enchantment")
+            {
+              var cardFromLibrary = Constants.cards.filter(search => search.ID == cardInHand)[0];
+              var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+
+              //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
+              //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
+              //var legendaryStatus = cardFromLibrary.legendary ? "- Legendary" : "";
+              //var isTapped = creature.isTapped ? `<:tapped:${Constants.emoji_id.tapped}> *(tapped)*` : ``;
+              //var creatureStats = `${cardFromLibrary.power + Constants.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + Constants.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
+              //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
+
+              emojiPairs[emojis[emoji_index]] = cardInHand;
+              embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${description}`, false);
+              emoji_index++;
+            }
+            else if (permanentType.toLowerCase() == 'land' && !isNonLandCard(cardInHand))
+            {
+              var cardFromLibrary = Constants.lands.filter(search => search.ID == cardInHand)[0];
+              var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+
+              //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
+              //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
+              //var legendaryStatus = cardFromLibrary.legendary ? "- Legendary" : "";
+              //var isTapped = creature.isTapped ? `<:tapped:${Constants.emoji_id.tapped}> *(tapped)*` : ``;
+              //var creatureStats = `${cardFromLibrary.power + Constants.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + Constants.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
+              //var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `${creatureStats} ${isAttacking}${isDefending}` : ``;
+
+              if (!lands.includes(cardFromLibrary.ID)){
+                emojiPairs[emojis[emoji_index]] = cardInHand;
+                embed.addField(`${cardFromLibrary.type.capitalize()}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} - ${description}`, false);
+                emoji_index++;
+                lands.push(cardFromLibrary.ID);
+              }
+            }
+            else {
+
+              var cardFromLibrary = Constants.cards.filter(search => search.ID == cardInHand)[0];
+              var description = (cardFromLibrary.description == null || cardFromLibrary.description == undefined) ? "No Description Available" : cardFromLibrary.description.replace("[NEW_LINE]", " - ");
+
+              //var isAttacking = creature.isDeclaredAttacker ? Constants.emoji_id.sword : '';
+              //var isDefending = creature.isDeclaredDefender ? Constants.emoji_id.shield : '';
+              var legendaryStatus = cardFromLibrary.legendary ? "- Legendary" : "";
+              //var isTapped = card.isTapped ? `<:tapped:${Constants.emoji_id.tapped}> *(tapped)*` : ``;
+              //var creatureStats = `${cardFromLibrary.power + Constants.getEquippedEnchantments("power", creature, battlefield["enchantments"])}/${cardFromLibrary.strength + Constants.getEquippedEnchantments("strength", creature, battlefield["enchantments"])}`;
+              var isCreatureDisplayStatsString = cardFromLibrary.type == 'creature' ? `| ${cardFromLibrary.power}/${cardFromLibrary.strength}` : ``;
+
+              emojiPairs[emojis[emoji_index]] = cardInHand;
+              embed.addField(`${cardFromLibrary.type.capitalize()} ${legendaryStatus}`, `${emojis[emoji_index]} ${cardFromLibrary.card_name} ${isCreatureDisplayStatsString}`, false);
+              emoji_index++;
+            }*/
+        });
+      }
+    //}
+
+    var keys = Object.keys(emojiPairs);
+
+    if (keys.length <= 0)
+      return [];
+
+    var message = await obj.message.channel.send({embed});
+
+
+    for (i = 0; i < keys.length; i++)
+    {
+      //var emoji = Constants.client.emojis.get("name", emojis[i]);
+      message.react(emojis[i]);
+    }
+
+    if (amount > keys.length)
+    {
+      amount = keys.length;
+    }
+
+    await message.awaitReactions(filter, { max: amount, time: local.reactionTimes.chooseTarget, errors: ['time'] })
+        .then(collected => {
+          try {
+            const reactions = collected.array();
+              /*var cardObj = [];
+              for (i = 0; i < reactions.length; i++)
+              {
+                  var emojiIndex = emojis.indexOf(reactions[i]);
+                  cardObj.push(currentHand.hand[emojiIndex]);
+              }*/
+
+              for (i = 0; i < reactions.length; i++)
+              {
+                //console.log(reactions[i]);
+
+                var card = emojiPairs[reactions[i]._emoji.name];
+
+                //console.log(card);
+
+                if (!isHand)
+                {
+                  var indexOfCardOnBattlefield_creatures = battlefield["creatures"].indexOf(card);
+                  var indexOfCardOnBattlefield_lands = battlefield["lands"].indexOf(card);
+                  var indexOfCardOnBattlefield_enchantments = battlefield["enchantments"].indexOf(card);
+
+                  if (indexOfCardOnBattlefield_creatures >= 0)
+                    targets.push(battlefield["creatures"][indexOfCardOnBattlefield_creatures]);
+
+                  if (indexOfCardOnBattlefield_lands >= 0)
+                    targets.push(battlefield["lands"][indexOfCardOnBattlefield_lands]);
+
+                  if (indexOfCardOnBattlefield_enchantments >= 0)
+                    targets.push(battlefield["enchantments"][indexOfCardOnBattlefield_enchantments]);
+                }
+                else {
+                    //var indexOfCardInHand = hand.hand.indexOf(card);
+                    //if (indexOfCardInHand >= 0)
+                      targets.push(card);
+                }
+                //creaturesToDeclare.push(currentBattlefield["creatures"][indexOfCardOnBattlefield].cardName);
+                //currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredAttacker = attackerState;
+                //currentBattlefield["creatures"][indexOfCardOnBattlefield].isDeclaredDefender = defenderState;
+              }
+          }
+          catch (err)
+          {
+            console.log(err);
+          }
+        })
+        .catch(collected => {
+          //obj.message.channel.send("times up");
+          //const reactions = collected.array();
+
+          /*if (collected.size < 1)
+          {
+            //obj.message.reply(`targeting canceled. You only selected ${reactions.length} permanents out of ${amount}!`);
+            return;
+          }*/
+
+        });
+
+        //console.log(targets);
+
+    return targets;
+  }
 };
 
 /*Number.prototype.NaN = function(num) {

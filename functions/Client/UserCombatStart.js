@@ -1099,8 +1099,32 @@ var local = {
 
     return result;
 
+  },
+
+  triggertest:function(cmd, args)
+  {
+    var msgOwnerID = cmd.author.id;
+    var channelId = cmd.channel.id;
+
+    var obj = {
+      id: msgOwnerID,
+      messageObj: cmd,
+      messageArgs: args,
+      callback: local.trigger
+    };
+
+    Constants.SQL.emit('check-user-exists', obj)
+
+    //console.log(obj.message);
+    //Constants.triggerEvent("201841156990959616", null, null, "onCardDraw", null, null, null, obj.message);
+  },
+
+  trigger:function(obj)
+  {
+    Constants.triggerEvent("201841156990959616", null, null, "onCardDraw", null, null, null, obj);
   }
 }
 
 module.exports = local;
 HandleFunctionCall.RegisterFunction(["a", "at", "attack", "combat", "fight", "begincombat"], local.attack);
+HandleFunctionCall.RegisterFunction(["trigger"], local.triggertest);

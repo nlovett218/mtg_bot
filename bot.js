@@ -89,6 +89,8 @@ Constants.SQL.on('success', async function() {
 
   console.log("Initiating listen server");
   Constants.client.emit('initiate-listen-server');
+
+  //Constants.triggerEvent("201841156990959616", null, null, "onCardDraw", null, null, null);
 });
 
 Constants.client.on('set-permanent-types', () => {
