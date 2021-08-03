@@ -335,7 +335,7 @@ var local = {
           {
               //console.log(creature);
               //console.log(creature.damageDealt[i])
-              damageDealtToCreatures += creature.damageDealt[i];
+              damageDealtToCreatures += matchUp.attackingCreature.damageDealt[i];
           }
         }
 
