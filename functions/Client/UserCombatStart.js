@@ -360,7 +360,7 @@ var local = {
 
       });
 
-      /*for(i = 0; i < attackerCreaturesThatDied.length; i++)
+      for(i = 0; i < attackerCreaturesThatDied.length; i++)
       {
         var bfIndex = -1;
         currentBattlefield["creatures"].forEach(function(creature) {
@@ -399,7 +399,7 @@ var local = {
         var creature = currentBattlefield["creatures"][i];
         if (creature.isDeclaredAttacker)
           creature.isTapped = creature.attributes.includes('vigilance') ? false : true;
-      }*/
+      }
 
 
 
