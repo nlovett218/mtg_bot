@@ -13,6 +13,8 @@ async function printMatchUp(obj, opponentID, combat_result, attackingCreaturesTh
   //console.log(attacker);
   //console.log(opponent);
 
+  //console.log(combat_result);
+
   var victoryStatus = attackingCreaturesThatDied.length > defendingCreaturesThatDied.length ? `- [Defender Victory]` : `- [Attacker Victory]`;
 
   if (attackingCreaturesThatDied.length == defendingCreaturesThatDied.length)
@@ -26,8 +28,9 @@ async function printMatchUp(obj, opponentID, combat_result, attackingCreaturesTh
     //.addField("Total Number of Cards", currentHand.hand.length, true)
     //.addField("Total Size of Deck", currentDeck.deck.length, true);
 
-  attackingCreaturesThatDied.forEach((creature) => {
+  combat_result.forEach((matchUp) => {
 
+    var creature = matchUp.attackingCreature;
     var attackerCreatureCardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID)[0];
     var attackerCreatureName = attackerCreatureCardFromLibrary.card_name;
     var EmbedTitleString = `${attackerCreatureName} ${Constants.emoji_id.sword} `;
@@ -357,7 +360,7 @@ var local = {
 
       });
 
-      for(i = 0; i < attackerCreaturesThatDied.length; i++)
+      /*for(i = 0; i < attackerCreaturesThatDied.length; i++)
       {
         var bfIndex = -1;
         currentBattlefield["creatures"].forEach(function(creature) {
@@ -396,7 +399,7 @@ var local = {
         var creature = currentBattlefield["creatures"][i];
         if (creature.isDeclaredAttacker)
           creature.isTapped = creature.attributes.includes('vigilance') ? false : true;
-      }
+      }*/
 
 
 
