@@ -363,7 +363,7 @@ var local = {
           if (!checked.includes(creature))
           {
             checked.push(creature);
-            opponentHealAmount += creature.attributes.creature_attributes.includes('lifelink') ? creature.lifeGained : 0;
+            opponentHealAmount += creature.attributes.includes('lifelink') ? creature.lifeGained : 0;
 
             for (i = 0; i < creature.damageDealt.length; i++)
             {
