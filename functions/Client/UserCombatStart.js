@@ -418,6 +418,11 @@ var local = {
         if (typeof(creature.attributes) == typeof("STRING"))
           creature.attributes = JSON.parse(cardFromLibrary[0].attributes);
 
+        if (creature.attributes.creature_attributes == null || creature.attributes.creature_attributes == undefined) {
+          creature.isTapped = true;
+          continue;
+        }
+
         if (creature.isDeclaredAttacker)
           creature.isTapped = creature.attributes.creature_attributes.includes('vigilance') ? false : true;
       }
