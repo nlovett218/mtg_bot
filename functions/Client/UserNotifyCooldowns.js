@@ -208,6 +208,7 @@ var local = {
         var mtg_lastClaimDateTime = new Date(userDataObj.mtg_claimCooldown);
         var timeToAllowClaim = Date.parse(new Date(Constants.moment(mtg_lastClaimDateTime).add(Constants.claimCooldown, 'minutes').format(Constants.momentTimeFormat)));
         var claimTimeDifference = Constants.getTimeBetween(timeToAllowClaim, now);
+        console.log(claimTimeDifference);
         //var timeString = `${parseInt(claimTimeDifference.days.toFixed()).pad()} days + ${parseInt(claimTimeDifference.hours.toFixed()).pad()}:${parseInt(claimTimeDifference.minutes.toFixed()).pad()}:${parseInt(claimTimeDifference.seconds.toFixed()).pad()}`;
         ClaimCooldownTime = timeToAllowClaim <= now ? -1 : claimTimeDifference;
       }
