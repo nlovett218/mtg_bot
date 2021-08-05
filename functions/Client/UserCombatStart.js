@@ -276,6 +276,20 @@ var local = {
       var attackerCreatures = currentBattlefield["creatures"];
       var defenderCreatures = opponentBattlefield["creatures"];
 
+      attackerCreatures.forEach((creature) => {
+        var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID);
+
+        if (typeof(creature.attributes) == typeof("STRING") || creature.attributes == [])
+          creature.attributes = JSON.parse(cardFromLibrary.attributes);
+      });
+
+      defenderCreatures.forEach((creature) => {
+        var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID);
+
+        if (typeof(creature.attributes) == typeof("STRING") || creature.attributes == [])
+          creature.attributes = JSON.parse(cardFromLibrary.attributes);
+      });
+
 
       //var battlefield_data = {};
       var battlefield = local.prepareCombat({id: obj.id, battlefield: currentBattlefield}, {id: opponentID, battlefield: opponentBattlefield});
@@ -347,7 +361,7 @@ var local = {
           if (!checked.includes(creature))
           {
             checked.push(creature);
-            opponentHealAmount += creature.attributes.includes('lifelink') ? creature.lifeGained : 0;
+            opponentHealAmount += creature.attributes.creature_attributes.includes('lifelink') ? creature.lifeGained : 0;
 
             for (i = 0; i < creature.damageDealt.length; i++)
             {
@@ -397,8 +411,13 @@ var local = {
       for (i = 0; i < currentBattlefield["creatures"].length; i++)
       {
         var creature = currentBattlefield["creatures"][i];
+        var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID);
+
+        if (typeof(creature.attributes) == typeof("STRING"))
+          creature.attributes = JSON.parse(cardFromLibrary.attributes);
+
         if (creature.isDeclaredAttacker)
-          creature.isTapped = creature.attributes.includes('vigilance') ? false : true;
+          creature.isTapped = creature.attributes.creature_attributes.includes('vigilance') ? false : true;
       }
 
 

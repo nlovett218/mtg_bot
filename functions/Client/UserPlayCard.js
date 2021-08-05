@@ -1095,7 +1095,7 @@ var local = {
           cardObj["isDeclaredDefender"] = false;
           cardObj["isDeclaredAttacker"] = false;
           cardObj["permanent"] = true;
-          cardObj["attributes"] = card.cardObj.attributes == null ? "" : JSON.parse(card.cardObj.attributes),
+          cardObj["attributes"] = card.cardObj.attributes == null ? {} : JSON.parse(card.cardObj.attributes),
           //cardObj["equipped_cards"]= [];
           currentBattlefield["creatures"].push(cardObj);
           var mana_cost = JSON.parse(card.cardObj.mana_cost);
