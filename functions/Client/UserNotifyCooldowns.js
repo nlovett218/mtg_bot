@@ -162,7 +162,7 @@ var local = {
 
             clearTimeout(request.draw.timer);
             clearTimeout(request.attack.timer);
-            clearTimeout(request.claim.timer);
+            //clearTimeout(request.claim.timer);
             clearTimeout(request.daily.timer);
             clearTimeout(request.weekly.timer);
           }
@@ -204,14 +204,14 @@ var local = {
         //var timeString = `${parseInt(drawTimeDifference.hours.toFixed()).pad()}:${parseInt(drawTimeDifference.minutes.toFixed()).pad()}:${parseInt(drawTimeDifference.seconds.toFixed()).pad()}`;
         DrawCooldownTime = timeToAllowDraw <= now ? -1 : drawTimeDifference;
       }
-      if (userDataObj.mtg_claimCooldown != null && userDataObj.mtg_claimCooldown != undefined) {
+      /*if (userDataObj.mtg_claimCooldown != null && userDataObj.mtg_claimCooldown != undefined) {
         var mtg_lastClaimDateTime = new Date(userDataObj.mtg_claimCooldown);
         var timeToAllowClaim = Date.parse(new Date(Constants.moment(mtg_lastClaimDateTime).add(Constants.claimCooldown, 'minutes').format(Constants.momentTimeFormat)));
         var claimTimeDifference = Constants.getTimeBetween(timeToAllowClaim, now);
         console.log(claimTimeDifference);
         //var timeString = `${parseInt(claimTimeDifference.days.toFixed()).pad()} days + ${parseInt(claimTimeDifference.hours.toFixed()).pad()}:${parseInt(claimTimeDifference.minutes.toFixed()).pad()}:${parseInt(claimTimeDifference.seconds.toFixed()).pad()}`;
         ClaimCooldownTime = timeToAllowClaim <= now ? -1 : claimTimeDifference;
-      }
+      }*/
       if (userDataObj.mtg_dailyPackCooldown != null && userDataObj.mtg_dailyPackCooldown != undefined) {
         var mtg_dailyPackCooldown = new Date(userDataObj.mtg_dailyPackCooldown);
         var timeToAllowDaily = Date.parse(new Date(Constants.moment(mtg_dailyPackCooldown).add(Constants.dailyCooldown, 'minutes').format(Constants.momentTimeFormat)));
@@ -241,11 +241,11 @@ var local = {
           timer: null,//util.promisify(setTimeout),
           time: getTimerTime(AttackCooldownTime)
         },
-        claim: {
+        /*claim: {
           shown: false,
           timer: null,//util.promisify(setTimeout),
           time: getTimerTime(ClaimCooldownTime)
-        },
+        },*/
         daily: {
           shown: false,
           timer: null,//util.promisify(setTimeout),
@@ -267,7 +267,7 @@ var local = {
       notifications.push(cooldownRequest);
       Constants.NOTIFICATIONS.emit('start-timer', {cooldown: "draw", time: cooldownRequest.draw.time, id: obj.id});
       Constants.NOTIFICATIONS.emit('start-timer', {cooldown: "attack", time: cooldownRequest.attack.time, id: obj.id});
-      Constants.NOTIFICATIONS.emit('start-timer', {cooldown: "claim", time: cooldownRequest.claim.time, id: obj.id});
+      //Constants.NOTIFICATIONS.emit('start-timer', {cooldown: "claim", time: cooldownRequest.claim.time, id: obj.id});
       Constants.NOTIFICATIONS.emit('start-timer', {cooldown: "daily", time: cooldownRequest.daily.time, id: obj.id});
       Constants.NOTIFICATIONS.emit('start-timer', {cooldown: "weekly", time: cooldownRequest.weekly.time, id: obj.id});
       /*Constants.USER.emit('start-timer', newTimer);
@@ -275,7 +275,7 @@ var local = {
       Constants.USER.emit('start-timer', newTimer);
       Constants.USER.emit('start-timer', newTimer);*/
 
-      obj.message.reply('you will now be notified when your cooldowns are up!');
+      obj.message.reply('you will now be notified when your draw, attack, daily, and weekly cooldowns are up!');
   }
 }
 
