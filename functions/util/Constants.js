@@ -2563,6 +2563,9 @@ var local = {
        if (attributes == undefined || attributes == null)
          return false;
 
+       if (attributes.triggers == undefined || attributes.triggers == null)
+         return false;
+
        return attributes.triggers.includes(trigger);
      },
 
