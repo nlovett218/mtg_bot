@@ -7,6 +7,9 @@ const HandleFunctionCall = require('./functions/HandleFunctionCall');
 //const repeating = require('repeating');
 const Topgg = require("@top-gg/sdk");
 const express = require("express");
+const fetch = require('node-fetch');
+const { URLSearchParams } = require('url');
+const http = require("http");
 
 const app = express();
 
@@ -173,6 +176,50 @@ Constants.client.on('initiate-listen-server', async function() {
 
   //console.log("App listening on port 3000");
 });
+
+/*Constants.client.on('initiate-listen-server', async function() {
+
+  //if (listenServerInit)
+     //return;
+
+  //listenServerInit = true;
+  const host = 'localhost';
+  const port = 3000;
+
+  const requestListener = function (req, res) {};
+
+  const server = http.createServer(requestListener);
+
+  server.listen(port, host, () => {
+      console.log(`Server is running on http://${host}:${port}`);
+  });
+
+
+  app.post("/test", webhook.listener(async (data) => {
+    // vote will be your vote object, e.g
+    //console.log("We got a vote!");
+    console.log(`Webhook test`); // 395526710101278721 < user who voted\
+  }));
+
+  const APIURL = `http://localhost:3000/test`;
+
+  const params = new URLSearchParams();
+  params.append('test', '123');
+  
+  //const data = `_user_id=${userId}&_api_key=${apiKey}&url=${url}`
+
+  var short_url = null;
+
+  var short = await fetch(`${APIURL}`, {method: 'POST', body: params})
+  //.then(res => res.json())
+  .then(json => {
+    console.log(json);
+    //short_url = json.shortenedUrl;
+  });
+
+  //console.log("App listening on port 3000");
+
+});*/
 
 
 /*process.on('SIGTERM', () => {

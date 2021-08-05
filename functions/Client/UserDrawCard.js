@@ -80,6 +80,8 @@ var local = {
             var query2 = `UPDATE mtg_user SET mtg_lastCardDrawnDateTime=STR_TO_DATE('${Constants.moment(now).format(Constants.momentTimeFormat)}', '%m-%d-%Y %H:%i:%s') WHERE mtg_userID='${obj.id}';`
             await HandleConnection.callDBFunction("MYSQL-fireAndForget", query);
             await HandleConnection.callDBFunction("MYSQL-fireAndForget", query2);
+
+            await Constants.triggerEvent(obj.id, obj.id, null, "onCardDraw", null, null, null, obj);
           }
           else {
             var timeDifference = Constants.getTimeBetween(timeToAllowDraw, now);

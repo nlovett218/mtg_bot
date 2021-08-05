@@ -25,7 +25,7 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic: King of the Discord", "0.73.8.88", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic: King of the Discord", "0.75.0.00", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   bot_webhook_authorization: 'mtg_kotd_webhook_top_gg',
@@ -87,6 +87,7 @@ var local = {
   MDB:new Events.EventEmitter(),
   USER:new Events.EventEmitter(),
   SERVER:new Events.EventEmitter(),
+  NOTIFICATIONS:new Events.EventEmitter(),
   cards:null,
   lands:null,
   mysql_connection_pool:MYSQL.createPool({
@@ -714,6 +715,7 @@ var local = {
 
   voteRewardString: '**Thanks for voting!** You have received:\n\n[CARDS]2x <:pack:831077408060604416>\n150x <:currency:831078729638871080>',
   couldNotAwardVoteRewardsString: '**Thanks for voting!** I was not able to issue you any rewards, since I could not find any data associated to your user ID.',
+  cooldownString: '**COOLDOWN ALERT:**\n\nYour [0] cooldown is now ready to be used!',
 
   awardVoteReward:async function(userId, multiplier)
   {
@@ -1783,8 +1785,8 @@ var local = {
 
       //var possibleTargets = [];
 
-      console.log(`callerID: ${callerId}`);
-      console.log(`guildID: ${guildID}`);
+      //console.log(`callerID: ${callerId}`);
+      //console.log(`guildID: ${guildID}`);
 
       //var findTargetQuery = `SELECT mtg_user.mtg_userID, mtg_user.mtg_health, mtg_user.mtg_guilds, mtg_gamedata.mtg_userID, mtg_gamedata.mtg_currentBattlefield, mtg_gamedata.mtg_currentHand FROM mtg_user, mtg_gamedata WHERE mtg_user.mtg_userID NOT IN (${commandRequestsString}) AND mtg_user.mtg_userID <> '${callerId}' AND JSON_EXTRACT(mtg_user.mtg_guilds, '$.${Constants.guildPrefix}${guildID}.optedInToServer') > 0 AND mtg_user.mtg_health > 0 GROUP BY mtg_user.mtg_userID, mtg_gamedata.mtg_userID order by rand() LIMIT 30;`;
       var findTargetQuery = `SELECT ud.mtg_userID, ud.mtg_health, ud.mtg_deaths, ud.mtg_guilds, gd.mtg_userID, gd.mtg_currentBattlefield, gd.mtg_currentHand, gd.mtg_currentDeck FROM mtg_user AS ud INNER JOIN mtg_gamedata AS gd ON ud.mtg_userID = gd.mtg_userID WHERE ud.mtg_userID NOT IN (${commandRequestsString}) AND ud.mtg_userID <> '${callerId}' AND JSON_EXTRACT(ud.mtg_guilds, '$.${local.guildPrefix}${guildID}.optedInToServer') > 0 AND ud.mtg_health > 0 GROUP BY ud.mtg_userID, gd.mtg_userID order by rand() LIMIT 30;`;
@@ -1836,6 +1838,43 @@ var local = {
       return opponentData;
   },
 
+  getPlayerData:async function(target, guildID)
+  {
+      //var possibleTargets = [];
+
+      //console.log(`callerID: ${callerId}`);
+      //console.log(`guildID: ${guildID}`);
+
+      //var findTargetQuery = `SELECT mtg_user.mtg_userID, mtg_user.mtg_health, mtg_user.mtg_guilds, mtg_gamedata.mtg_userID, mtg_gamedata.mtg_currentBattlefield, mtg_gamedata.mtg_currentHand FROM mtg_user, mtg_gamedata WHERE mtg_user.mtg_userID NOT IN (${commandRequestsString}) AND mtg_user.mtg_userID <> '${callerId}' AND JSON_EXTRACT(mtg_user.mtg_guilds, '$.${Constants.guildPrefix}${guildID}.optedInToServer') > 0 AND mtg_user.mtg_health > 0 GROUP BY mtg_user.mtg_userID, mtg_gamedata.mtg_userID order by rand() LIMIT 30;`;
+      var findTargetQuery = `SELECT ud.mtg_userID, ud.mtg_health, ud.mtg_deaths, ud.mtg_guilds, gd.mtg_userID, gd.mtg_currentBattlefield, gd.mtg_currentHand, gd.mtg_currentDeck FROM mtg_user AS ud INNER JOIN mtg_gamedata AS gd ON ud.mtg_userID = gd.mtg_userID WHERE ud.mtg_userID = '${target}' GROUP BY ud.mtg_userID, gd.mtg_userID;`;
+      //console.log(findTargetQuery);
+      var targetData = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", findTargetQuery);
+
+      //console.log(targetData);
+      //console.log(targetData[0].mtg_gamedata);
+
+      if (targetData == undefined || targetData == null || targetData.length <= 0)
+      {
+        console.log("could not find requested player data!");
+        //Constants.removeIDRequest(obj.id);
+        return null;
+      }
+
+      var chosenOpponent = targetData[0];
+
+      var playerData = {
+        id: chosenOpponent.ud.mtg_userID,
+        userData: chosenOpponent.ud,
+        gameData: chosenOpponent.gd,
+        mtg_currentHand: chosenOpponent.gd.mtg_currentHand,
+        mtg_currentBattlefield: chosenOpponent.gd.mtg_currentBattlefield
+      }
+
+      //console.log(opponentData);
+
+      return playerData;
+  },
+
   damagePlayer:async function(obj, caller, target, fieldID = null, amount, displayOutput = true)
   {
     //var t
@@ -1845,14 +1884,27 @@ var local = {
       target = await local.getRandomOpponent(caller, obj.guildId, null, null);
       //console.log(target);
     }
+    else
+    {
+      if (typeof(target) == typeof("STRING")) {
+        if (target == caller)
+          target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+        else
+          target = await local.getPlayerData(target, obj.guildId);
+      }
+    }
 
     if (target == null) {
       return console.log("no opponents found");
     }
 
+    //console.log(target);
+
     var opponentID = target.userData.mtg_userID;
 
-    await local.until(_ => local.commandRequests.includes(opponentID) == false);
+    if (caller != opponentID)
+      await local.until(_ => local.commandRequests.includes(opponentID) == false);
+
     local.pushIDRequest(opponentID);
 
     var opponent_health = parseInt(target.userData.mtg_health);
@@ -1997,6 +2049,235 @@ var local = {
 
   },
 
+  destroyPermanent:async function(obj, caller, target, fieldID = null, amount, displayOutput = true, permanentType = "non_land")
+  {
+    if (target == null)
+    {
+      console.log(`getting random opponent in guild ${obj.guildId}`);
+      target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+      //console.log(target);
+    }
+    else
+    {
+      if (typeof(target) == typeof("STRING")) {
+        if (target == caller)
+          target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+        else
+          target = await local.getPlayerData(target, obj.guildId);
+      }
+    }
+
+    if (target == null) {
+      return console.log("no opponents found");
+    }
+
+    var opponentID = target.userData.mtg_userID;
+    var chosen_target = [];
+
+    if (caller != opponentID)
+      await local.until(_ => local.commandRequests.includes(opponentID) == false);
+
+    local.pushIDRequest(opponentID);
+
+    var opponent_gameDataObj = target.gameData;
+    var opponentBattlefield = JSON.parse(opponent_gameDataObj.mtg_currentBattlefield);
+    var opponentHand = JSON.parse(opponent_gameDataObj.mtg_currentHand);
+
+    chosen_target = await local.chooseTargets(obj, opponentID, opponentBattlefield, amount, permanentType, false, null, null, `Choose up to ${amount} '${permanentType}' permanent(s) to destroy:`);
+
+
+    //Constants.removeIDRequest(obj.id);
+    //Constants.removeIDRequest(opponentID);
+    if (chosen_target == null || chosen_target.length < 1)
+    {
+      obj.message.channel.send(`<@${obj.id}> -> no targets were selected or no '${permanentType}' permanents were available to be targeted!`);
+      local.removeIDRequest(opponentID);
+      return;
+    }
+
+    await forEach(chosen_target, async (target) => {
+      var targetCardFromLibrary = target.cardID.startsWith("MTG") ? local.cards.filter(card => card.ID == target.cardID)[0] : local.lands.filter(land => land.ID == target.cardID)[0];
+      //opponentHand.hand.splice(opponentHand.hand.indexOf(id), 1);
+      if (targetCardFromLibrary.type.toLowerCase().includes('enchantment'))
+      {
+        if (target.target == null)
+        {
+          opponentBattlefield["enchantments"].splice(opponentBattlefield["enchantments"].indexOf(target), 1);
+        }
+        else {
+          var creatures = opponentBattlefield["creatures"].filter(creature => creature.fieldID == target.target);
+
+          await forEach(creatures, async (creature) => {
+            var indexOfCreature = opponentBattlefield["creatures"].indexOf(creature);
+            var equippedCardIndex = opponentBattlefield["creatures"][indexOfCreature].equipped_cards.indexOf(target.fieldID);
+
+            if (equippedCardIndex >= 0)
+              opponentBattlefield["creatures"][indexOfCreature].equipped_cards.splice(equippedCardIndex, 1);
+
+
+          });
+          opponentBattlefield["enchantments"].splice(opponentBattlefield["enchantments"].indexOf(target), 1);
+        }
+      }
+      if (targetCardFromLibrary.type.toLowerCase().includes('creature'))
+      {
+        await forEach(target.equipped_cards, async (equipped_card_id) => {
+          var enchantments = await opponentBattlefield["enchantments"].filter(enchantment => enchantment.fieldID == equipped_card_id);
+          await forEach(enchantments, async (enchantment) => {
+            var indexOfEnchantment = opponentBattlefield["enchantments"].indexOf(enchantment);
+
+            if (indexOfEnchantment < 0)
+              return;
+
+            opponentBattlefield["enchantments"].splice(indexOfEnchantment, 1);
+            opponentHand.hand.push(enchantment.cardID);
+          });
+          target.equipped_cards.splice(target.equipped_cards.indexOf(equipped_card_id), 1);
+
+        });
+        opponentBattlefield["creatures"].splice(opponentBattlefield["creatures"].indexOf(target), 1);
+      }
+      if (targetCardFromLibrary.type.toLowerCase().includes('land'))
+      { 
+        opponentBattlefield["lands"].splice(opponentBattlefield["lands"].indexOf(target), 1);
+      }
+
+      //opponentHand.hand.push(target.cardID);
+    });
+
+    var updateOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(opponentHand)}', mtg_currentBattlefield='${JSON.stringify(opponentBattlefield)}' WHERE mtg_userID='${opponentID}';`;
+    await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentGameDataQuery);
+    local.removeIDRequest(opponentID);
+  },
+
+  addCreatureCounter:async function(obj, caller, target, fieldID = null, amount, displayOutput = true, permanentType = "creature", counter = {power: 1, strength: 1})
+  {
+    if (target == null)
+    {
+      console.log(`getting random opponent in guild ${obj.guildId}`);
+      target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+      //console.log(target);
+    }
+    else
+    {
+      if (typeof(target) == typeof("STRING")) {
+        /*if (target == caller)
+          target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+        else*/
+          target = await local.getPlayerData(target, obj.guildId);
+      }
+    }
+
+    if (target == null) {
+      return console.log("no opponents found");
+    }
+
+    var opponentID = target.userData.mtg_userID;
+    var chosen_target = [];
+
+    if (caller != opponentID)
+      await local.until(_ => local.commandRequests.includes(opponentID) == false);
+
+    local.pushIDRequest(opponentID);
+
+    var opponent_gameDataObj = target.gameData;
+    var opponentBattlefield = JSON.parse(opponent_gameDataObj.mtg_currentBattlefield);
+    var opponentHand = JSON.parse(opponent_gameDataObj.mtg_currentHand);
+
+    chosen_target = await local.chooseTargets(obj, opponentID, opponentBattlefield, amount, permanentType, false, null, null, `Choose up to ${amount} '${permanentType}' permanent(s) to add a +${counter.power}/+${counter.strength} counter to:`);
+
+
+    //Constants.removeIDRequest(obj.id);
+    //Constants.removeIDRequest(opponentID);
+    if (chosen_target == null || chosen_target.length < 1)
+    {
+      obj.message.channel.send(`<@${obj.id}> -> no targets were selected or no '${permanentType}' permanents were available to be targeted!`);
+      local.removeIDRequest(opponentID);
+      return;
+    }
+
+    await forEach(chosen_target, async (target) => {
+      var targetCardFromLibrary = target.cardID.startsWith("MTG") ? local.cards.filter(card => card.ID == target.cardID)[0] : local.lands.filter(land => land.ID == target.cardID)[0];
+      //opponentHand.hand.splice(opponentHand.hand.indexOf(id), 1);
+      if (targetCardFromLibrary.type.toLowerCase().includes('creature'))
+      {
+        var indexOfTarget = opponentBattlefield["creatures"].indexOf(target);
+        opponentBattlefield["creatures"][indexOfTarget].power += counter.power;
+        opponentBattlefield["creatures"][indexOfTarget].strength += counter.strength;
+      }
+      //opponentHand.hand.push(target.cardID);
+    });
+
+    var updateOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentBattlefield='${JSON.stringify(opponentBattlefield)}' WHERE mtg_userID='${opponentID}';`;
+    await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentGameDataQuery);
+    local.removeIDRequest(opponentID);
+
+    var result = {
+      hand: opponentHand,
+      battlefield: opponentBattlefield,
+    };
+
+    return result;
+  },
+
+  healPlayer:async function(obj, caller, target, fieldID = null, amount, displayOutput = true)
+  {
+    //var t
+    if (target == null)
+    {
+      console.log(`getting random opponent in guild ${obj.guildId}`);
+      target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+      //console.log(target);
+    }
+    else
+    {
+      if (typeof(target) == typeof("STRING")) {
+        target = await local.getPlayerData(target, obj.guildId);
+      }
+    }
+
+    if (target == null) {
+      return console.log("no opponents found");
+    }
+
+    var opponentID = target.userData.mtg_userID;
+
+    if (caller != opponentID)
+      await local.until(_ => local.commandRequests.includes(opponentID) == false);
+
+    local.pushIDRequest(opponentID);
+
+    var opponent_health = parseInt(target.userData.mtg_health);
+
+    opponent_health += amount;
+
+    var caller_username = obj.message.author.username;
+    var target_obj = await obj.message.guild.members.fetch(opponentID);
+    var target_username = target_obj.user.username;
+
+    //console.log(obj);
+    obj.message.channel.send(`**${target_username}** was healed by ${local.emoji_id.heart}**${amount}**!`);
+
+    //var damageDealt = parseInt(obj.result.result[0].mtg_user.mtg_damagedealt) + amount;
+    /*var opponentDeck = JSON.parse(target.gameData.mtg_currentDeck);
+    var opponentBattlefield = JSON.parse(target.gameData.mtg_currentBattlefield);
+    var opponentHand = JSON.parse(target.gameData.mtg_currentHand);
+    var currentDeck = obj.deck;
+
+    var currentBattlefield = obj.battlefield;
+    var currentDeck = obj.deck;
+    var currentHand = obj.hand;*/
+
+    updateOpponentUserDataQuery = `UPDATE mtg_user SET mtg_health='${opponent_health}' WHERE mtg_userID='${opponentID}';`;
+    //updateOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentBattlefield='${JSON.stringify(newBattlefield)}', mtg_currentDeck='${JSON.stringify(newDeck)}', mtg_currentHand='${JSON.stringify(newHand)}' WHERE mtg_userID='${opponentID}';`;
+
+    //await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateUserDataQuery);
+    //await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateGameDataQuery);
+    //await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentGameDataQuery);
+    await local.HandleConnection.callDBFunction('MYSQL-fireAndForget', updateOpponentUserDataQuery);
+
+  },
+
   discardCard:async function(obj, caller, target, fieldID = null, amount, displayOutput = true, permanentType = "non_land")
   {
 
@@ -2006,6 +2287,15 @@ var local = {
       target = await local.getRandomOpponent(caller, obj.guildId, null, null);
       //console.log(target);
     }
+    else
+    {
+      if (typeof(target) == typeof("STRING")) {
+        if (target == caller)
+          target = await local.getRandomOpponent(caller, obj.guildId, null, null);
+        else
+          target = await local.getPlayerData(target, obj.guildId);
+      }
+    }
 
     if (target == null) {
       return console.log("no opponents found");
@@ -2013,7 +2303,9 @@ var local = {
 
     var opponentID = target.userData.mtg_userID;
 
-    await local.until(_ => local.commandRequests.includes(opponentID) == false);
+    if (caller != opponentID)
+      await local.until(_ => local.commandRequests.includes(opponentID) == false);
+
     local.pushIDRequest(opponentID);
 
     var chosen_target = [];
@@ -2082,8 +2374,8 @@ var local = {
     //console.log(target);
     //console.log(amount);
     if (target != null) {
-
-      var gameData = await HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT * FROM mtg_gamedata WHERE mtg_userID=\'" + target + "\'");
+      console.log("card_draw: target not null");
+      var gameData = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT * FROM mtg_gamedata WHERE mtg_userID=\'" + target + "\'");
       //var jsonObj = res;//JSON.parse(res);
       var gameDataObj = gameData[0].mtg_gamedata;
       var userDataObj = obj.result.result[0].mtg_user;
@@ -2091,7 +2383,7 @@ var local = {
       var currentDeck = JSON.parse(gameDataObj.mtg_currentDeck);
       var guildID = obj.message.guild.id;
       var guilds = JSON.parse(userDataObj.mtg_guilds);
-      var guildObjID = `${Constants.guildPrefix}${guildID}`;
+      var guildObjID = `${local.guildPrefix}${guildID}`;
 
       local.pushIDRequest(target);
 
@@ -2104,7 +2396,38 @@ var local = {
 
       var query = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(currentHand)}', mtg_currentDeck='${JSON.stringify(currentDeck)}' WHERE mtg_userID='${target}';`;
       //var query2 = `UPDATE mtg_user SET mtg_lastCardDrawnDateTime=STR_TO_DATE('${Constants.moment(now).format(Constants.momentTimeFormat)}', '%m-%d-%Y %H:%i:%s') WHERE mtg_userID='${target}';`
-      await HandleConnection.callDBFunction("MYSQL-fireAndForget", query);
+      await local.HandleConnection.callDBFunction("MYSQL-fireAndForget", query);
+      //await HandleConnection.callDBFunction("MYSQL-fireAndForget", query2);
+
+      for (i = 0; i < amount; i++){
+        await local.triggerEvent(caller, target, null, "onCardDraw", null, null, null, obj.result);
+      }
+    }
+    else
+    {
+      console.log("card_draw: target is null, using caller id");
+      var gameData = await local.HandleConnection.callDBFunction("MYSQL-returnQuery", "SELECT * FROM mtg_gamedata WHERE mtg_userID=\'" + caller + "\'");
+      //var jsonObj = res;//JSON.parse(res);
+      var gameDataObj = gameData[0].mtg_gamedata;
+      var userDataObj = obj.result.result[0].mtg_user;
+      var currentHand = JSON.parse(gameDataObj.mtg_currentHand);
+      var currentDeck = JSON.parse(gameDataObj.mtg_currentDeck);
+      var guildID = obj.message.guild.id;
+      var guilds = JSON.parse(userDataObj.mtg_guilds);
+      var guildObjID = `${local.guildPrefix}${guildID}`;
+
+      //local.pushIDRequest(target);
+
+      var newCards = currentDeck.deck.splice(0, amount);
+      newCards.forEach(async function(newCard)
+      {
+        currentHand.hand.push(newCard);
+        await local.displayNewCard(obj, newCard, target);
+      });
+
+      var query = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(currentHand)}', mtg_currentDeck='${JSON.stringify(currentDeck)}' WHERE mtg_userID='${target}';`;
+      //var query2 = `UPDATE mtg_user SET mtg_lastCardDrawnDateTime=STR_TO_DATE('${Constants.moment(now).format(Constants.momentTimeFormat)}', '%m-%d-%Y %H:%i:%s') WHERE mtg_userID='${target}';`
+      await local.HandleConnection.callDBFunction("MYSQL-fireAndForget", query);
       //await HandleConnection.callDBFunction("MYSQL-fireAndForget", query2);
 
       for (i = 0; i < amount; i++){
@@ -2165,8 +2488,9 @@ var local = {
       "damage": local.damagePlayer,
       "card_draw": local.drawCard,
       "discard_opponent": local.discardCard,
-      //"destroy_permanent": local.destroyPermanent,
-      //"heal": local.healPlayer,
+      "destroy_permanent": local.destroyPermanent,
+      "heal": local.healPlayer,
+      "add_counter": local.addCreatureCounter,
       //"damage_creature": local.damageCreature,
     }
     objArray.forEach((objElement) => {
@@ -2178,7 +2502,7 @@ var local = {
       if (attributes != null)
       {
         console.log(`attributes not null`);
-        console.log(attributes);
+        //console.log(attributes);
         if (attributes["cardType"] != null && attributes["cardType"] != undefined)
         {
           console.log(`attribute cardTypes not null`);
@@ -2201,9 +2525,20 @@ var local = {
 
                 var permanentType = (cardTypeAttributes["permanent_type"] == null || cardTypeAttributes["permanent_type"] == undefined) ? "non_land" : cardTypeAttributes["permanent_type"];
 
-                console.log(permanentType);
+                //console.log(permanentType);
 
-                cardTypeFunctions[cardType](obj, obj.callerId, target, obj.target, amount, true, permanentType);
+                var counter = {
+                  power: 1,
+                  strength: 1
+                }
+
+                if (cardType.toLowerCase() == 'add_counter')
+                {
+                  counter.power = cardTypeAttributes.power;
+                  counter.strength = cardTypeAttributes.strength;
+                }
+
+                cardTypeFunctions[cardType](obj, obj.callerId, target, obj.target, amount, true, permanentType, counter);
 
                 console.log(`running event trigger function ${cardType}`);
               }
@@ -2337,12 +2672,12 @@ var local = {
          console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s new turn event was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s new turn event was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
          
        }
@@ -2358,11 +2693,11 @@ var local = {
      {
        console.log("onEnterBattlefield");
 
-       var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onEnterBattlefield");
-       var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onEnterBattlefield");
+       var creaturesArray = obj.battlefield["creatures"];//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onEnterBattlefield");
+       var enchantmentsArray = obj.battlefield["enchantments"];//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onEnterBattlefield");
 
-       //console.log(creatures);
-       //console.log(enchantments);
+       console.log(creaturesArray);
+       console.log(enchantmentsArray);
        //console.log(obj);
 
        if (obj.result.result[0].mtg_user.mtg_reset == 1) {
@@ -2383,17 +2718,27 @@ var local = {
        }
 
 
+       var creatures = [];
+       var enchantments = [];
+
+
        if (obj.message != null)
        {
          console.log(`message not null`);
-         creatures.forEach((creature) => {
-           var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s battlefield entrance event was triggered!`);
+         creaturesArray.forEach((creature) => {
+           if (creature.fieldID == obj.target) {
+             creatures.push(creature);
+             var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
+             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           }
          });
 
-         enchantments.forEach((enchantment) => {
-           var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s battlefield entrance event was triggered!`);
+         enchantmentsArray.forEach((enchantment) => {
+           if (enchantment.fieldID == obj.target) {
+             enchantments.push(enchantment);
+             var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
+             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           }
          });
          
        }
@@ -2439,12 +2784,12 @@ var local = {
          console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s creature death event was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s creature death event was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
          
        }
@@ -2458,8 +2803,115 @@ var local = {
 
      onDamageDealt:async function(obj)
      {
+       console.log("onDamageDealt");
 
-     }
+       var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onDamageDealt");
+       var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onDamageDealt");
+
+       //console.log(creatures);
+       //console.log(enchantments);
+       //console.log(obj);
+
+       if (obj.result.result[0].mtg_user.mtg_reset == 1) {
+        //obj.message.reply(" you were killed recently. You must first get a new deck with \`m!begin\` before trying to play!");
+        return;
+       }
+
+       //console.log(obj.result);
+
+       var userDataObj = obj.result.result[0];
+       var guildID = obj.message.guild.id;
+       var guilds = JSON.parse(userDataObj.mtg_user.mtg_guilds);
+       var guildObjID = `${local.guildPrefix}${guildID}`;
+
+       if (guilds[guildObjID] == undefined || guilds[guildObjID].optedInToServer == 0) {
+        //obj.message.reply(" you must first opt in!");
+        return;
+       }
+
+
+       if (obj.message != null)
+       {
+         console.log(`message not null`);
+         creatures.forEach((creature) => {
+           var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+         });
+
+         enchantments.forEach((enchantment) => {
+           var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+         });
+         
+       }
+       await local.processTrigger(obj, creatures, "creatures", "onDamageDealt");
+       await local.processTrigger(obj, enchantments, "enchantments", "onDamageDealt");
+
+       //console.log('');
+
+       local.removeIDRequest(obj.callerId);
+     },
+
+     onSentToGraveyard:async function(obj)
+     {
+       console.log("onSentToGraveyard");
+
+       var creaturesArray = obj.battlefield["creatures"];//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onEnterBattlefield");
+       var enchantmentsArray = obj.battlefield["enchantments"];//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onEnterBattlefield");
+
+       //console.log(creaturesArray);
+       //console.log(enchantmentsArray);
+       //console.log(obj);
+
+       if (obj.result.result[0].mtg_user.mtg_reset == 1) {
+        //obj.message.reply(" you were killed recently. You must first get a new deck with \`m!begin\` before trying to play!");
+        return;
+       }
+
+       //console.log(obj.result);
+
+       var userDataObj = obj.result.result[0];
+       var guildID = obj.message.guild.id;
+       var guilds = JSON.parse(userDataObj.mtg_user.mtg_guilds);
+       var guildObjID = `${local.guildPrefix}${guildID}`;
+
+       if (guilds[guildObjID] == undefined || guilds[guildObjID].optedInToServer == 0) {
+        //obj.message.reply(" you must first opt in!");
+        return;
+       }
+
+
+       var creatures = [];
+       var enchantments = [];
+
+
+       if (obj.message != null)
+       {
+         console.log(`message not null`);
+         creaturesArray.forEach((creature) => {
+           if (creature.fieldID == obj.target) {
+             creatures.push(creature);
+             var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
+             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           }
+         });
+
+         enchantmentsArray.forEach((enchantment) => {
+           if (enchantment.fieldID == obj.target) {
+             enchantments.push(enchantment);
+             var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
+             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           }
+         });
+         
+       }
+       await local.processTrigger(obj, creatures, "creatures", "onSentToGraveyard");
+       await local.processTrigger(obj, enchantments, "enchantments", "onSentToGraveyard");
+
+       //console.log('');
+
+       local.removeIDRequest(obj.callerId);
+     },
 
   },
 
@@ -2510,6 +2962,17 @@ var local = {
         {
             var cardFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
 
+            var attributes = JSON.parse(cardFromLibrary.attributes);
+            var hasHexproof = false;
+
+            if (attributes["creature_attributes"] != null && attributes["creature_attributes"] != undefined)
+            {
+              if (attributes["creature_attributes"].includes("hexproof") && (obj.id != id))
+              {
+                hasHexproof = true;
+              }
+            }
+
             var typeValidationObj = {
               callerId: obj.id,
               targetId: id,
@@ -2522,7 +2985,7 @@ var local = {
               types: local.specialPermanentTypes[permanentType].types
             };
 
-            if (local.specialPermanentTypes[permanentType].checker(typeValidationObj))
+            if (local.specialPermanentTypes[permanentType].checker(typeValidationObj) && !hasHexproof)
             {
 
               var isAttacking = creature.isDeclaredAttacker ? local.emoji_id.sword : '';
@@ -2542,6 +3005,17 @@ var local = {
         {
             var cardFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
 
+            var attributes = JSON.parse(cardFromLibrary.attributes);
+            var hasHexproof = false;
+
+            if (attributes["creature_attributes"] != null && attributes["creature_attributes"] != undefined)
+            {
+              if (attributes["creature_attributes"].includes("hexproof") && (obj.id != id))
+              {
+                hasHexproof = true;
+              }
+            }
+
             var typeValidationObj = {
               callerId: obj.id,
               targetId: id,
@@ -2554,7 +3028,7 @@ var local = {
               types: local.specialPermanentTypes[permanentType].types
             };
 
-            if (local.specialPermanentTypes[permanentType].checker(typeValidationObj))
+            if (local.specialPermanentTypes[permanentType].checker(typeValidationObj) && !hasHexproof)
             {
               var description = (cardFromDeck.description == null || cardFromDeck.description == undefined) ? "No Description Available" : cardFromDeck.description.replace("[NEW_LINE]", " - ");
 
@@ -2609,7 +3083,7 @@ var local = {
 
         var lands = [];
 
-        console.log(hand);
+        //console.log(hand);
 
         await hand.hand.forEach(async (cardInHand) =>
         {

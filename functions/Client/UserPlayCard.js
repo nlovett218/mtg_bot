@@ -164,6 +164,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
   var chosen_target = null;
   var mentions = await obj.message.mentions.members.array();
   var userID = "";
+  var require_chosen_target = false;
 
 
   await forEach(attributes.cardType, async (type) => {
@@ -187,6 +188,8 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         var objects = await discardCards(obj, cardDiscardAmount, deck, hand);
         deck = objects.deck;
         hand = objects.hand;
+
+        require_chosen_target = false;
         break;
       case 'discard_opponent':
         if (mentions.length < 1)
@@ -208,6 +211,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         }
 
         Constants.pushIDRequest(opponentID);
+        require_chosen_target = true;
         //console.log(userID);
         var getOpponentGameDataQuery = `SELECT * FROM mtg_gamedata WHERE mtg_userID='${opponentID}';`;
         var opponentGameData = await HandleConnection.callDBFunction("MYSQL-returnQuery", getOpponentGameDataQuery);
@@ -231,7 +235,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
 
         //console.log(cardObj);
         var cardFromLibrary = cardObj.cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == cardObj.cardID)[0] : Constants.lands.filter(land => land.ID == cardObj.cardID)[0];
-        chosen_target = await chooseTargets(obj, opponentID, opponentBattlefield, discardAmount, permanentType, true, opponentHand, cardFromLibrary, `Choose up to ${discardAmount} '${permanentType}' permanent(s) to discard from player's hand:`);
+        chosen_target = await Constants.chooseTargets(obj, opponentID, opponentBattlefield, discardAmount, permanentType, true, opponentHand, cardFromLibrary, `Choose up to ${discardAmount} '${permanentType}' permanent(s) to discard from player's hand:`);
 
         //Constants.removeIDRequest(obj.id);
         if (chosen_target == null || chosen_target.length < 1)
@@ -252,6 +256,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         break;
       case 'prevent_damage':
         obj.message.channel.send(`<@${obj.id}> -> this card will be used from your hand when you get attacked! Leave it in your hand with enough mana to get the benefit.`);
+        require_chosen_target = false;
         break;
       case 'destroy_permanent':
         if (mentions.length < 1)
@@ -263,6 +268,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
 
         var opponentID = mentions[0].id;
         //Constants.pushIDRequest(obj.id);
+        require_chosen_target = true;
         Constants.pushIDRequest(opponentID);
 
         if (opponentID == obj.id)
@@ -296,7 +302,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
 
         //console.log(cardObj);
         var cardFromLibrary = cardObj.cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == cardObj.cardID)[0] : Constants.lands.filter(land => land.ID == cardObj.cardID)[0];
-        chosen_target = await chooseTargets(obj, opponentID, opponentBattlefield, destroyAmount, permanentType, false, null, cardFromLibrary, `Choose up to ${destroyAmount} '${permanentType}' permanent(s) to destroy:`);
+        chosen_target = await Constants.chooseTargets(obj, opponentID, opponentBattlefield, destroyAmount, permanentType, false, null, cardFromLibrary, `Choose up to ${destroyAmount} '${permanentType}' permanent(s) to destroy:`);
 
         //Constants.removeIDRequest(obj.id);
         //Constants.removeIDRequest(opponentID);
@@ -370,7 +376,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         var copy_source = attributes.copy_permanent.copy_source;
 
         //console.log(copy_source);
-
+        require_chosen_target = true;
         Constants.pushIDRequest(obj.id);
 
         var cardFromLibrary = cardObj.cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == cardObj.cardID)[0] : Constants.lands.filter(land => land.ID == cardObj.cardID)[0];
@@ -396,7 +402,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
           var copyAmount = parseInt(attributes.copy_permanent.amount)
           var permanentType = attributes.copy_permanent.permanent_type;
 
-          chosen_target = await chooseTargets(obj, obj.id, selfBattlefield, copyAmount, permanentType, false, null, cardFromLibrary, `Choose up to ${copyAmount} '${permanentType}' permanent(s) to copy:`);
+          chosen_target = await Constants.chooseTargets(obj, obj.id, selfBattlefield, copyAmount, permanentType, false, null, cardFromLibrary, `Choose up to ${copyAmount} '${permanentType}' permanent(s) to copy:`);
 
           if (chosen_target == null || chosen_target.length < 1)
           {
@@ -439,7 +445,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
               var card_name = targetCardFromLibrary.ID.startsWith("MTG") ? targetCardFromLibrary.card_name : targetCardFromLibrary.land;
 
               if (copy_cardType == "aura") {
-                var chosen_target_copy_enchantment = await chooseTargets(obj, obj.id, selfBattlefield, copy_targetAmount, copy_permanentType, false, null, targetCardFromLibrary.cardObj, "Choose a permanent to equip:");
+                var chosen_target_copy_enchantment = await Constants.chooseTargets(obj, obj.id, selfBattlefield, copy_targetAmount, copy_permanentType, false, null, targetCardFromLibrary.cardObj, "Choose a permanent to equip:");
                 
                 if (chosen_target_copy_enchantment == null || chosen_target_copy_enchantment.length < 1)
                 {
@@ -502,7 +508,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
                 var randomOpponentHand = JSON.parse(random_opponent.mtg_currentHand);
 
 
-                var chosen_target_copy_enchantment = await chooseTargets(obj, random_opponent.id, randomOpponentBattlefield, copy_targetAmount, copy_permanentType, false, null, targetCardFromLibrary.cardObj, "Choose a permanent to equip:");
+                var chosen_target_copy_enchantment = await Constants.chooseTargets(obj, random_opponent.id, randomOpponentBattlefield, copy_targetAmount, copy_permanentType, false, null, targetCardFromLibrary.cardObj, "Choose a permanent to equip:");
                 
                 if (chosen_target_copy_enchantment == null || chosen_target_copy_enchantment.length < 1)
                 {
@@ -610,19 +616,39 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         }
         else if (copy_source == "opponent")
         {
+            var attributes = JSON.parse(targetCardFromLibrary.attributes);
             obj.message.channel.send(`<@${obj.id}> -> this card source is still being worked on!`);
         }
 
         Constants.removeIDRequest(obj.id);
         break;
       case 'heal':
-        obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
+        //obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
+        //console.log(hand);
+        var healAmount = parseInt(cardObj.attributes.amount);
+        Constants.healPlayer(obj, obj.id, obj.id, null, healAmount, true);
+
+        //var cardID
+        //hand.hand.splice(hand.hand.indexOf(cardObj.ID), 1);
+        require_chosen_target = false;
         break;
       case 'control_permanent':
         obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
+        require_chosen_target = true;
         break;
-      case 'buff_creature':
+      case 'add_counter':
         obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
+        var counter = {
+          power: 1,
+          strength: 1
+        };
+        var amount = parseInt(cardObj.attributes.amount);
+        counter.power = parseInt(attributes["add_counter"].power);
+        counter.strength = parseInt(attributes["add_counter"].strength);
+        var result = await Constants.addCreatureCounter(obj, obj.id, obj.id, null, amount, true, "creature", counter);
+        battlefield = result.battlefield;
+        //hand.hand.splice(hand.hand.indexOf(cardObj.ID), 1);
+        require_chosen_target = false;
         break;
       case 'nerf_creature':
         obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
@@ -633,7 +659,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
   });
 
   var success = chosen_target != null && chosen_target.length > 0 ? true : false;
-  return {"battlefield": battlefield, "deck": deck, "hand": hand, "chosen_target": chosen_target, "success": success};
+  return {"battlefield": battlefield, "deck": deck, "hand": hand, "chosen_target": chosen_target, "success": success, "requires_chosen_target": require_chosen_target};
 }
 
 function isNonLandCard(card)
@@ -1042,7 +1068,7 @@ var local = {
           cardObj["isDeclaredDefender"] = false;
           cardObj["isDeclaredAttacker"] = false;
           cardObj["permanent"] = true;
-          cardObj["attributes"] = card.cardObj.attributes == null ? "" : card.cardObj.attributes,
+          cardObj["attributes"] = card.cardObj.attributes == null ? "" : JSON.parse(card.cardObj.attributes),
           //cardObj["equipped_cards"]= [];
           currentBattlefield["creatures"].push(cardObj);
           var mana_cost = JSON.parse(card.cardObj.mana_cost);
@@ -1085,7 +1111,7 @@ var local = {
 
           //console.log(objects);
 
-          if (!objects.success)
+          if (!objects.success && objects.require_chosen_target)
           {
             //obj.message.reply(`you didn't select any cards, or no cards were available to be selected from this user!`);
             //Constants.removeIDRequest(obj.id);
@@ -1109,7 +1135,7 @@ var local = {
           mana_to_tap["blue"] = mana_cost["blue"];
           var objects = await castInstantOrSorcery(obj, "instant", cardObj, currentBattlefield, currentDeck, currentHand);
 
-          if (!objects.success)
+          if (!objects.success && objects.require_chosen_target)
           {
             //obj.message.reply(`you didn't select any cards, or no cards were available to be selected from this user!`);
             //Constants.removeIDRequest(obj.id);
@@ -1150,7 +1176,7 @@ var local = {
               var attributes = JSON.parse(card.cardObj.attributes);
               var targetAmount = parseInt(attributes["amount"]);
               var permanentType = String(attributes["permanent_type"]);
-              chosen_target = await chooseTargets(obj, obj.id, currentBattlefield, targetAmount, permanentType, false, null, card.cardObj, "Choose a permanent to equip:");
+              chosen_target = await Constants.chooseTargets(obj, obj.id, currentBattlefield, targetAmount, permanentType, false, null, card.cardObj, "Choose a permanent to equip:");
 
               if (chosen_target == null || chosen_target.length < 1)
               {
@@ -1211,7 +1237,7 @@ var local = {
               var attributes = await JSON.parse(card.cardObj.attributes);
               var targetAmount = parseInt(attributes["amount"]);
               var permanentType = String(attributes["permanent_type"]);
-              chosen_target = await chooseTargets(obj, userID, opponentBattlefield, targetAmount, permanentType, false, null, card.cardObj, "Choose a permanent to equip:");
+              chosen_target = await Constants.chooseTargets(obj, userID, opponentBattlefield, targetAmount, permanentType, false, null, card.cardObj, "Choose a permanent to equip:");
 
               if (chosen_target == null || chosen_target.length < 1)
               {
@@ -1244,7 +1270,8 @@ var local = {
               var updateOpponentGameDataQuery = `UPDATE mtg_gamedata SET mtg_currentHand='${JSON.stringify(opponentHand)}', mtg_currentBattlefield='${JSON.stringify(opponentBattlefield)}' WHERE mtg_userID='${userID}';`;
               await HandleConnection.callDBFunction("MYSQL-returnQuery", updateOpponentGameDataQuery);
 
-              Constants.removeIDRequest(userID)
+              Constants.removeIDRequest(userID);
+              //await local.triggerEvent(obj.id, obj.id, cardObj.fieldID, "onEnterBattlefield", currentBattlefield, currentHand, null, obj);
             }
             else {
               console.log('unknown enchantment type');
@@ -1254,6 +1281,7 @@ var local = {
           }
           else {
             currentBattlefield["enchantments"].push(cardObj);
+            //await local.triggerEvent(obj.id, obj.id, cardObj.fieldID, "onEnterBattlefield", currentBattlefield, currentHand, null, obj);
           }
         }
         else {
@@ -1271,6 +1299,8 @@ var local = {
 
         var updateQuery = `UPDATE mtg_gamedata SET mtg_currentDeck='${JSON.stringify(currentDeck)}', mtg_currentHand='${JSON.stringify(currentHand)}', mtg_currentBattlefield='${JSON.stringify(currentBattlefield)}', mtg_allowedLandCast='${landCast}' WHERE mtg_userID='${obj.id}';`;
         await HandleConnection.callDBFunction("MYSQL-returnQuery", updateQuery);
+
+        await Constants.triggerEvent(obj.id, obj.id, cardObj.fieldID, "onEnterBattlefield", currentBattlefield, currentHand, null, obj);
 
         var cardName = card.cardID.startsWith("MTG") ? card.cardObj.card_name : card.cardObj.land;
         var chosen_cards = ``;
