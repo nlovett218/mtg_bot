@@ -2672,12 +2672,12 @@ var local = {
          console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s begin turn ability was triggered!`);
          });
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s begin turn ability was triggered!`);
          });
          
        }
@@ -2693,8 +2693,8 @@ var local = {
      {
        console.log("onEnterBattlefield");
 
-       var creaturesArray = obj.battlefield["creatures"];//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onEnterBattlefield");
-       var enchantmentsArray = obj.battlefield["enchantments"];//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onEnterBattlefield");
+       var creaturesArray = obj.battlefield["creatures"].filter(creature => local.battle_events_functions.hasTrigger(creature.cardID, "onEnterBattlefield") && obj.target == creature.fieldID);//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onEnterBattlefield");
+       var enchantmentsArray = obj.battlefield["enchantments"].filter(enchantment => local.battle_events_functions.hasTrigger(enchantment.cardID, "onEnterBattlefield") && obj.target == enchantment.fieldID);//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onEnterBattlefield");
 
        console.log(creaturesArray);
        console.log(enchantmentsArray);
@@ -2729,7 +2729,7 @@ var local = {
            if (creature.fieldID == obj.target) {
              creatures.push(creature);
              var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+             obj.message.reply(`${creatureFromLibrary.card_name}'s enter battlefield ability was triggered!`);
            }
          });
 
@@ -2737,13 +2737,17 @@ var local = {
            if (enchantment.fieldID == obj.target) {
              enchantments.push(enchantment);
              var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+             obj.message.reply(`${creatureFromLibrary.card_name}'s enter battlefield ability was triggered!`);
            }
          });
          
        }
-       await local.processTrigger(obj, creatures, "creatures", "onEnterBattlefield");
-       await local.processTrigger(obj, enchantments, "enchantments", "onEnterBattlefield");
+
+       if (creatures.length > 0)
+         await local.processTrigger(obj, creatures, "creatures", "onEnterBattlefield");
+
+       if (enchantments.length > 0)
+         await local.processTrigger(obj, enchantments, "enchantments", "onEnterBattlefield");
 
        //console.log('');
 
@@ -2784,12 +2788,12 @@ var local = {
          console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s creature death ability was triggered!`);
          });
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s creature death ability was triggered!`);
          });
          
        }
@@ -2835,12 +2839,12 @@ var local = {
          console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s damage dealt ability was triggered!`);
          });
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s damage dealt ability was triggered!`);
          });
          
        }
@@ -2892,7 +2896,7 @@ var local = {
            if (creature.fieldID == obj.target) {
              creatures.push(creature);
              var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+             obj.message.reply(`${creatureFromLibrary.card_name}'s graveyard ability was triggered!`);
            }
          });
 
@@ -2900,7 +2904,7 @@ var local = {
            if (enchantment.fieldID == obj.target) {
              enchantments.push(enchantment);
              var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+             obj.message.reply(`${creatureFromLibrary.card_name}'s graveyard ability was triggered!`);
            }
          });
          
@@ -2958,7 +2962,7 @@ var local = {
       {
         var lands = [];
 
-        await forEach(battlefield["creatures"], async (creature) =>
+        await battlefield["creatures"].forEach(async (creature) =>
         {
             var cardFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
 
@@ -3001,7 +3005,7 @@ var local = {
             }
         });
 
-        await forEach(battlefield["enchantments"], async (enchantment) =>
+        await battlefield["enchantments"].forEach(async (enchantment) =>
         {
             var cardFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
 
@@ -3038,7 +3042,7 @@ var local = {
             }
         });
 
-        await forEach(battlefield["lands"], async (land) =>
+        await battlefield["lands"].forEach(async (land) =>
         {
             var cardFromLibrary = local.lands.filter(search => search.ID == land.cardID)[0];
 

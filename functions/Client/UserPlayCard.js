@@ -165,6 +165,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
   var mentions = await obj.message.mentions.members.array();
   var userID = "";
   var require_chosen_target = false;
+  var success = false;
 
 
   await forEach(attributes.cardType, async (type) => {
@@ -173,6 +174,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
     //console.log(chosen_target);
     switch (type.toLowerCase()) {
       case 'card_draw':
+        require_chosen_target = false;
         var cardDrawAmount = parseInt(attributes[type].add);
         var cardDiscardAmount = parseInt(attributes[type].subtract);
         var newCards = deck.deck.splice(0, cardDrawAmount);
@@ -190,12 +192,15 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         hand = objects.hand;
 
         require_chosen_target = false;
+        success = true;
         break;
       case 'discard_opponent':
+        require_chosen_target = true;
         if (mentions.length < 1)
         {
           obj.message.channel.send(`<@${obj.id}> -> in order to use this card you must @ mention the user you wish to target!`);
           //Constants.removeIDRequest(obj.id);
+          success = false;
           break;
         }
 
@@ -207,11 +212,11 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         {
           obj.message.channel.send(`<@${obj.id}> -> you can not target yourself!`);
           //Constants.removeIDRequest(obj.id);
+          success = false;
           break;
         }
 
         Constants.pushIDRequest(opponentID);
-        require_chosen_target = true;
         //console.log(userID);
         var getOpponentGameDataQuery = `SELECT * FROM mtg_gamedata WHERE mtg_userID='${opponentID}';`;
         var opponentGameData = await HandleConnection.callDBFunction("MYSQL-returnQuery", getOpponentGameDataQuery);
@@ -221,6 +226,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
           obj.message.channel.send(`<@${obj.id}> -> no user data found for '${mentions[0].user.username}'!`);
           //Constants.removeIDRequest(obj.id);
           Constants.removeIDRequest(opponentID);
+          success = false;
           break;
         }
 
@@ -230,8 +236,8 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         var opponentHand = JSON.parse(opponent_gameDataObj.mtg_currentHand);
         //var attributes = JSON.parse(card.cardObj.attributes);
         //var opponentID = opponent_gameDataObj.mtg_userID;
-        var discardAmount = parseInt(attributes.amount)
-        var permanentType = attributes.permanent_type;
+        var discardAmount = parseInt(cardObj.attributes.amount)
+        var permanentType = cardObj.attributes.permanent_type;
 
         //console.log(cardObj);
         var cardFromLibrary = cardObj.cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == cardObj.cardID)[0] : Constants.lands.filter(land => land.ID == cardObj.cardID)[0];
@@ -242,6 +248,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         {
           obj.message.channel.send(`<@${obj.id}> -> no targets were selected or no '${permanentType}' permanents were available to be targeted!`);
           break;
+          success = false;
         }
 
         //console.log(chosen_target);
@@ -257,18 +264,20 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
       case 'prevent_damage':
         obj.message.channel.send(`<@${obj.id}> -> this card will be used from your hand when you get attacked! Leave it in your hand with enough mana to get the benefit.`);
         require_chosen_target = false;
+        success = false;
         break;
       case 'destroy_permanent':
+        require_chosen_target = true;
         if (mentions.length < 1)
         {
           obj.message.channel.send(`<@${obj.id}> -> in order to use this card you must @ mention the user you wish to target!`);
           //Constants.removeIDRequest(obj.id);
+          success = false;
           break;
         }
 
         var opponentID = mentions[0].id;
         //Constants.pushIDRequest(obj.id);
-        require_chosen_target = true;
         Constants.pushIDRequest(opponentID);
 
         if (opponentID == obj.id)
@@ -276,6 +285,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
           obj.message.channel.send(`<@${obj.id}> -> you can not target yourself!`);
           //Constants.removeIDRequest(obj.id);
           Constants.removeIDRequest(opponentID);
+          success = false;
           break;
         }
 
@@ -288,6 +298,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
           obj.message.channel.send(`<@${obj.id}> -> no user data found for '${mentions[0].user.username}'!`);
           //Constants.removeIDRequest(obj.id);
           Constants.removeIDRequest(opponentID);
+          success = false;
           break;
         }
 
@@ -297,8 +308,8 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         var opponentHand = JSON.parse(opponent_gameDataObj.mtg_currentHand);
         //var attributes = JSON.parse(card.cardObj.attributes);
         //var opponentID = opponent_gameDataObj.mtg_userID;
-        var destroyAmount = parseInt(attributes.amount)
-        var permanentType = attributes.permanent_type;
+        var destroyAmount = parseInt(cardObj.attributes.amount)
+        var permanentType = cardObj.attributes.permanent_type;
 
         //console.log(cardObj);
         var cardFromLibrary = cardObj.cardID.startsWith("MTG") ? Constants.cards.filter(card => card.ID == cardObj.cardID)[0] : Constants.lands.filter(land => land.ID == cardObj.cardID)[0];
@@ -310,6 +321,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         {
           obj.message.channel.send(`<@${obj.id}> -> no targets were selected or no '${permanentType}' permanents were available to be targeted!`);
           Constants.removeIDRequest(opponentID);
+          success = false;
           break;
         }
 
@@ -373,7 +385,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
       case 'copy_permanent':
         //obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
 
-        var copy_source = attributes.copy_permanent.copy_source;
+        var copy_source = cardObj.attributes.copy_permanent.copy_source;
 
         //console.log(copy_source);
         require_chosen_target = true;
@@ -390,6 +402,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
             obj.message.channel.send(`<@${obj.id}> -> no user data found!`);
             //Constants.removeIDRequest(obj.id);
             Constants.removeIDRequest(obj.id);
+            success = false;
             break;
           }
 
@@ -408,6 +421,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
           {
             obj.message.channel.send(`<@${obj.id}> -> no targets were selected or no '${permanentType}' permanents were available to be targeted!`);
             Constants.removeIDRequest(obj.id);
+            success = false;
             break;
           }
 
@@ -452,6 +466,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
                   obj.message.channel.send(`<@${obj.id}> -> no enchantments were targeted or you don't have any creatures available to target!`);
                   //Constants.removeIDRequest(obj.id);
                   Constants.removeIDRequest(obj.id);
+                  success = false;
                   return;
                 }
 
@@ -495,6 +510,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
                 {
                   obj.message.channel.send(`<@${obj.id}> -> no one available to be targeted with ${card_name}!`);
                   Constants.removeIDRequest(obj.id);
+                  success = false;
                   return;
                 }
 
@@ -514,6 +530,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
                 {
                   obj.message.channel.send(`<@${obj.id}> -> no enchantments were targeted or they don't have any creatures available to target!`);
                   Constants.removeIDRequest(obj.id);
+                  success = false;
                   return;
                 }
 
@@ -623,18 +640,20 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         Constants.removeIDRequest(obj.id);
         break;
       case 'heal':
+        require_chosen_target = false;
         //obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
         //console.log(hand);
         var healAmount = parseInt(cardObj.attributes.amount);
         Constants.healPlayer(obj, obj.id, obj.id, null, healAmount, true);
-
         //var cardID
         //hand.hand.splice(hand.hand.indexOf(cardObj.ID), 1);
-        require_chosen_target = false;
+
+        success = true;
         break;
       case 'control_permanent':
         obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
         require_chosen_target = true;
+        success = false;
         break;
       case 'add_counter':
         obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
@@ -649,6 +668,7 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         battlefield = result.battlefield;
         //hand.hand.splice(hand.hand.indexOf(cardObj.ID), 1);
         require_chosen_target = false;
+        success = true;
         break;
       case 'nerf_creature':
         obj.message.channel.send(`<@${obj.id}> -> this card is still being worked on!`);
@@ -658,7 +678,10 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
     }
   });
 
-  var success = chosen_target != null && chosen_target.length > 0 ? true : false;
+  if (require_chosen_target) {
+    success = chosen_target != null && chosen_target.length > 0 ? true : false;
+  }
+
   return {"battlefield": battlefield, "deck": deck, "hand": hand, "chosen_target": chosen_target, "success": success, "requires_chosen_target": require_chosen_target};
 }
 
@@ -1111,11 +1134,15 @@ var local = {
 
           //console.log(objects);
 
-          if (!objects.success && objects.require_chosen_target)
+          if (objects.require_chosen_target)
           {
-            //obj.message.reply(`you didn't select any cards, or no cards were available to be selected from this user!`);
-            //Constants.removeIDRequest(obj.id);
-            return;
+            if (!objects.success)
+              return;
+          }
+          else
+          {
+            if (!objects.success)
+              return;
           }
 
           currentBattlefield = objects.battlefield;
@@ -1133,14 +1160,21 @@ var local = {
           mana_to_tap["green"] = mana_cost["green"];
           mana_to_tap["red"] = mana_cost["red"];
           mana_to_tap["blue"] = mana_cost["blue"];
-          var objects = await castInstantOrSorcery(obj, "instant", cardObj, currentBattlefield, currentDeck, currentHand);
+          var objects = await castInstantOrSorcery(obj, "sorcery", cardObj, currentBattlefield, currentDeck, currentHand);
 
-          if (!objects.success && objects.require_chosen_target)
+          //console.log(objects);
+
+          if (objects.require_chosen_target)
           {
-            //obj.message.reply(`you didn't select any cards, or no cards were available to be selected from this user!`);
-            //Constants.removeIDRequest(obj.id);
-            return;
+            if (!objects.success)
+              return;
           }
+          else
+          {
+            if (!objects.success)
+              return;
+          }
+
           currentBattlefield = objects.battlefield;
           currentDeck = objects.deck;
           currentHand = objects.hand;
