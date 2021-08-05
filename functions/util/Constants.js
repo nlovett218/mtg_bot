@@ -2672,12 +2672,12 @@ var local = {
          console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s begin turn ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s begin turn ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
          
        }
@@ -2729,7 +2729,7 @@ var local = {
            if (creature.fieldID == obj.target) {
              creatures.push(creature);
              var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s enter battlefield ability was triggered!`);
+             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
            }
          });
 
@@ -2737,7 +2737,7 @@ var local = {
            if (enchantment.fieldID == obj.target) {
              enchantments.push(enchantment);
              var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s enter battlefield ability was triggered!`);
+             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
            }
          });
          
@@ -2788,12 +2788,12 @@ var local = {
          console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s creature death ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s creature death ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
          
        }
@@ -2839,12 +2839,12 @@ var local = {
          console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s damage dealt ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s damage dealt ability was triggered!`);
+           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
          });
          
        }
@@ -2896,7 +2896,7 @@ var local = {
            if (creature.fieldID == obj.target) {
              creatures.push(creature);
              var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s graveyard ability was triggered!`);
+             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
            }
          });
 
@@ -2904,7 +2904,7 @@ var local = {
            if (enchantment.fieldID == obj.target) {
              enchantments.push(enchantment);
              var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s graveyard ability was triggered!`);
+             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
            }
          });
          

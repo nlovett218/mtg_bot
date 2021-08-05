@@ -175,8 +175,8 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
     switch (type.toLowerCase()) {
       case 'card_draw':
         require_chosen_target = false;
-        var cardDrawAmount = parseInt(attributes[type].add);
-        var cardDiscardAmount = parseInt(attributes[type].subtract);
+        var cardDrawAmount = parseInt(cardObj.attributes[type].add);
+        var cardDiscardAmount = parseInt(cardObj.attributes[type].subtract);
         var newCards = deck.deck.splice(0, cardDrawAmount);
         await newCards.forEach(async function(newCard)
         {
