@@ -279,15 +279,17 @@ var local = {
       attackerCreatures.forEach((creature) => {
         var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID);
 
+        //console.log(creature);
+        //console.log(cardFromLibrary);
         if (typeof(creature.attributes) == typeof("STRING") || creature.attributes == [])
-          creature.attributes = JSON.parse(cardFromLibrary.attributes);
+          creature.attributes = JSON.parse(cardFromLibrary[0].attributes);
       });
 
       defenderCreatures.forEach((creature) => {
         var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID);
 
         if (typeof(creature.attributes) == typeof("STRING") || creature.attributes == [])
-          creature.attributes = JSON.parse(cardFromLibrary.attributes);
+          creature.attributes = JSON.parse(cardFromLibrary[0].attributes);
       });
 
 
@@ -414,7 +416,7 @@ var local = {
         var cardFromLibrary = Constants.cards.filter(search => search.ID == creature.cardID);
 
         if (typeof(creature.attributes) == typeof("STRING"))
-          creature.attributes = JSON.parse(cardFromLibrary.attributes);
+          creature.attributes = JSON.parse(cardFromLibrary[0].attributes);
 
         if (creature.isDeclaredAttacker)
           creature.isTapped = creature.attributes.creature_attributes.includes('vigilance') ? false : true;
