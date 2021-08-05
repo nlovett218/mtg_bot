@@ -185,14 +185,18 @@ async function castInstantOrSorcery(obj, spellType, cardObj, currentBattlefield,
         });
 
         if (cardDiscardAmount < 1)
+        {
+          success = true;
           break;
+        }
 
         var objects = await discardCards(obj, cardDiscardAmount, deck, hand);
         deck = objects.deck;
         hand = objects.hand;
 
-        require_chosen_target = false;
+        //require_chosen_target = false;
         success = true;
+        //console.log()
         break;
       case 'discard_opponent':
         require_chosen_target = true;
@@ -1134,7 +1138,7 @@ var local = {
 
           //console.log(objects);
 
-          if (objects.require_chosen_target)
+          if (objects.requires_chosen_target)
           {
             if (!objects.success)
               return;
@@ -1164,7 +1168,7 @@ var local = {
 
           //console.log(objects);
 
-          if (objects.require_chosen_target)
+          if (objects.requires_chosen_target)
           {
             if (!objects.success)
               return;
