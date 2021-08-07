@@ -25,7 +25,7 @@ var local = {
   HandleConnection:null, //will be initialized after starting
   FILE_SYSTEM:require('fs'),
   channels_data_file: './channels-data.json',
-  BotInfo:new BotInfo("Magic: King of the Discord", "0.75.0.13", "suff0cati0n", "m!"),
+  BotInfo:new BotInfo("Magic: King of the Discord", "0.75.0.15", "suff0cati0n", "m!"),
   client:new Discord.Client(),
   config_file:'./config.json',
   bot_webhook_authorization: 'mtg_kotd_webhook_top_gg',
@@ -1352,7 +1352,7 @@ var local = {
 
           if (description[i] == "" || description[i] == " ")
           {
-            console.log('empty string');
+            //console.log('empty string');
             continue;
           }
 
@@ -1585,8 +1585,9 @@ var local = {
 
     if (target != null)
     {
-      var opponent = await obj.message.guild.members.fetch(opponentID);
-      username = opponent.username;
+      var opponent = await obj.message.guild.members.fetch(target);
+      //console.log(opponent);
+      username = opponent.user.username;
     }
 
     var embed = new local.Discord.MessageEmbed();
@@ -2366,7 +2367,7 @@ var local = {
     local.removeIDRequest(opponentID);
   },
 
-
+  //cardTypeFunctions[cardType](obj, obj.callerId, target, obj.target, amount, true, permanentType, counter);
   drawCard:async function(obj, caller, target, fieldID = null, amount, displayOutput = true)
   {
     //console.log(obj);
@@ -2390,6 +2391,7 @@ var local = {
       var newCards = currentDeck.deck.splice(0, amount);
       newCards.forEach(async function(newCard)
       {
+        //console.log(newCard);
         currentHand.hand.push(newCard);
         await local.displayNewCard(obj, newCard, target);
       });
@@ -2402,6 +2404,8 @@ var local = {
       for (i = 0; i < amount; i++){
         await local.triggerEvent(caller, target, null, "onCardDraw", null, null, null, obj.result);
       }
+
+      local.removeIDRequest(target);
     }
     else
     {
@@ -2494,18 +2498,18 @@ var local = {
       //"damage_creature": local.damageCreature,
     }
     objArray.forEach((objElement) => {
-      console.log("element: " + objElement);
+      //console.log("element: " + objElement);
       var cardFromLibrary = local.cards.filter(search => search.ID == objElement.cardID)[0];
 
       var attributes = JSON.parse(cardFromLibrary.attributes);
 
       if (attributes != null)
       {
-        console.log(`attributes not null`);
+        //console.log(`attributes not null`);
         //console.log(attributes);
         if (attributes["cardType"] != null && attributes["cardType"] != undefined)
         {
-          console.log(`attribute cardTypes not null`);
+          //console.log(`attribute cardTypes not null`);
           var cardTypes = attributes.cardType;
 
           //console.log(cardTypes);
@@ -2518,7 +2522,20 @@ var local = {
 
               if (cardTypeAttributes != undefined && cardTypeAttributes != null) {
 
-                var amount = cardTypeAttributes.amount;
+                var add = 0;
+                var subtract = 0;
+                var amount = 0;
+
+                if (cardTypeAttributes["add"] != null && cardTypeAttributes["add"] != undefined)
+                  add = cardTypeAttributes.add;
+
+                if (cardTypeAttributes["subtract"] != null && cardTypeAttributes["subtract"] != undefined)
+                  subtract = cardTypeAttributes.subtract;
+
+                if (cardTypeAttributes["amount"] != null && cardTypeAttributes["amount"] != undefined)
+                  subtract = cardTypeAttributes.subtract;
+
+                var amountFixed = (amount + add) - subtract;
                 var source = cardTypeAttributes.source;
 
                 var target = source == "self" ? obj.callerId : obj.targetPlayer;
@@ -2538,16 +2555,16 @@ var local = {
                   counter.strength = cardTypeAttributes.strength;
                 }
 
-                cardTypeFunctions[cardType](obj, obj.callerId, target, obj.target, amount, true, permanentType, counter);
+                cardTypeFunctions[cardType](obj, obj.callerId, target, obj.target, amountFixed, true, permanentType, counter);
 
-                console.log(`running event trigger function ${cardType}`);
+                //console.log(`running event trigger function ${cardType}`);
               }
             }
           });
         }
         else
         {
-          console.log(`attributes cardTypes is null or undefined`);
+          //console.log(`attributes cardTypes is null or undefined`);
         }
       }
     })
@@ -2592,7 +2609,7 @@ var local = {
 
      onCardDraw:async function(obj)
      {
-       console.log("onCardDraw");
+       //console.log("onCardDraw");
 
        var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onCardDraw");
        var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onCardDraw");
@@ -2621,7 +2638,7 @@ var local = {
 
        if (obj.message != null)
        {
-         console.log(`message not null`);
+         //console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
            obj.message.reply(`${creatureFromLibrary.card_name}'s card draw event was triggered!`);
@@ -2629,7 +2646,7 @@ var local = {
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s card draw event was triggered!`);
+           obj.message.reply(`${enchantmentFromLibrary.card_name}'s card draw event was triggered!`);
          });
          
        }
@@ -2643,7 +2660,7 @@ var local = {
 
      onBeginTurn:async function(obj)
      {
-       console.log("onBeginTurn");
+       //console.log("onBeginTurn");
 
        var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onBeginTurn");
        var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onBeginTurn");
@@ -2672,7 +2689,7 @@ var local = {
 
        if (obj.message != null)
        {
-         console.log(`message not null`);
+         //console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
            obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
@@ -2680,7 +2697,7 @@ var local = {
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${enchantmentFromLibrary.card_name}'s ability was triggered!`);
          });
          
        }
@@ -2694,13 +2711,13 @@ var local = {
 
      onEnterBattlefield:async function(obj)
      {
-       console.log("onEnterBattlefield");
+       //console.log("onEnterBattlefield");
 
        var creaturesArray = obj.battlefield["creatures"].filter(creature => local.battle_events_functions.hasTrigger(creature.cardID, "onEnterBattlefield") && obj.target == creature.fieldID);//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onEnterBattlefield");
        var enchantmentsArray = obj.battlefield["enchantments"].filter(enchantment => local.battle_events_functions.hasTrigger(enchantment.cardID, "onEnterBattlefield") && obj.target == enchantment.fieldID);//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onEnterBattlefield");
 
-       console.log(creaturesArray);
-       console.log(enchantmentsArray);
+       //console.log(creaturesArray);
+       //console.log(enchantmentsArray);
        //console.log(obj);
 
        if (obj.result.result[0].mtg_user.mtg_reset == 1) {
@@ -2727,7 +2744,7 @@ var local = {
 
        if (obj.message != null)
        {
-         console.log(`message not null`);
+         //console.log(`message not null`);
          creaturesArray.forEach((creature) => {
            if (creature.fieldID == obj.target) {
              creatures.push(creature);
@@ -2740,7 +2757,7 @@ var local = {
            if (enchantment.fieldID == obj.target) {
              enchantments.push(enchantment);
              var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+             obj.message.reply(`${enchantmentFromLibrary.card_name}'s ability was triggered!`);
            }
          });
          
@@ -2759,7 +2776,7 @@ var local = {
 
      onCreatureDeath:async function(obj)
      {
-       console.log("onCreatureDeath");
+       //console.log("onCreatureDeath");
 
        var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onCreatureDeath");
        var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onCreatureDeath");
@@ -2788,7 +2805,7 @@ var local = {
 
        if (obj.message != null)
        {
-         console.log(`message not null`);
+         //console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
            obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
@@ -2796,7 +2813,7 @@ var local = {
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${enchantmentFromLibrary.card_name}'s ability was triggered!`);
          });
          
        }
@@ -2810,7 +2827,7 @@ var local = {
 
      onDamageDealt:async function(obj)
      {
-       console.log("onDamageDealt");
+       //console.log("onDamageDealt");
 
        var creatures = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onDamageDealt");
        var enchantments = local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onDamageDealt");
@@ -2839,7 +2856,7 @@ var local = {
 
        if (obj.message != null)
        {
-         console.log(`message not null`);
+         //console.log(`message not null`);
          creatures.forEach((creature) => {
            var creatureFromLibrary = local.cards.filter(search => search.ID == creature.cardID)[0];
            obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
@@ -2847,7 +2864,7 @@ var local = {
 
          enchantments.forEach((enchantment) => {
            var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-           obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+           obj.message.reply(`${enchantmentFromLibrary.card_name}'s ability was triggered!`);
          });
          
        }
@@ -2861,7 +2878,7 @@ var local = {
 
      onSentToGraveyard:async function(obj)
      {
-       console.log("onSentToGraveyard");
+       //console.log("onSentToGraveyard");
 
        var creaturesArray = obj.battlefield["creatures"];//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "creature", "onEnterBattlefield");
        var enchantmentsArray = obj.battlefield["enchantments"];//local.battle_events_functions.getMatchingTriggerCards(obj.callerId, obj.targetPlayer, obj.battlefield, "enchantment", "onEnterBattlefield");
@@ -2894,7 +2911,7 @@ var local = {
 
        if (obj.message != null)
        {
-         console.log(`message not null`);
+         //console.log(`message not null`);
          creaturesArray.forEach((creature) => {
            if (creature.fieldID == obj.target) {
              creatures.push(creature);
@@ -2907,7 +2924,7 @@ var local = {
            if (enchantment.fieldID == obj.target) {
              enchantments.push(enchantment);
              var enchantmentFromLibrary = local.cards.filter(search => search.ID == enchantment.cardID)[0];
-             obj.message.reply(`${creatureFromLibrary.card_name}'s ability was triggered!`);
+             obj.message.reply(`${enchantmentFromLibrary.card_name}'s ability was triggered!`);
            }
          });
          
