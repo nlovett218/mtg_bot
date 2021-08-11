@@ -10,7 +10,7 @@ const express = require("express");
 const fetch = require('node-fetch');
 const { URLSearchParams } = require('url');
 const http = require("http");
-
+const html = require("./html.js");
 const app = express();
 
 const webhook = new Topgg.Webhook(Constants.bot_webhook_authorization);
@@ -92,6 +92,9 @@ Constants.SQL.on('success', async function() {
 
   console.log("Initiating listen server");
   Constants.client.emit('initiate-listen-server');
+
+  console.log("Initiating web server");
+  Constants.WEB_SERVER.emit('start');
 
   //Constants.triggerEvent("201841156990959616", null, null, "onCardDraw", null, null, null);
 });

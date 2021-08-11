@@ -87,6 +87,7 @@ var local = {
   MDB:new Events.EventEmitter(),
   USER:new Events.EventEmitter(),
   SERVER:new Events.EventEmitter(),
+  WEB_SERVER:new Events.EventEmitter(),
   NOTIFICATIONS:new Events.EventEmitter(),
   cards:null,
   lands:null,
