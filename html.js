@@ -1,4 +1,4 @@
-var http = require('http');
+/*var http = require('http');
 var express = require('express');
 var app = express();
 const LOG = require('./functions/util/LogAction');
@@ -22,4 +22,4 @@ Constants.WEB_SERVER.on('start', function () {
 	httpServer.listen(8080);
 
 	console.log("HTTP server listening on port 8080");
-});
+});*/
