@@ -113,7 +113,7 @@ var local = {
 `typing \`m!begin\` and you can get help at any time by typing \`m!help\`.**\n` +
 `Discord Server: __**https://discord.gg/mkotd**__\n` +
 `Patreon: __**https://www.patreon.com/magic_kotd?fan_landing=true**__\n` +
-`Website: __**http://magickingofthediscord.com!**__\n` +
+`Website: __**http://magickingofthediscord.com**__\n` +
 `\n` +
 `**NOTE:** This bot is still in the development process and some features may not work as intended or provide unexpected results. The bot will be restarted on many occasions.`);
     cmd.reply({embed});
