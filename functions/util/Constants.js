@@ -95,7 +95,7 @@ var local = {
       connectionLimit : 100, //important
       host     : 'localhost',
       user     : 'mtg_bot',
-      password : 'Clovett84##',
+      password : '',
       database : 'mtg_db',
       debug    :  false
   }),
