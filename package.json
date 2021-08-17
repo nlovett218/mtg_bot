@@ -20,7 +20,8 @@
     "require-dir": "^1.2.0",
     "sequence": "^3.0.0",
     "snekfetch": "^4.0.4",
-    "words-array": "^1.0.1"
+    "words-array": "^1.0.1",
+    "ws": "^8.1.0"
   },
   "devDependencies": {},
   "scripts": {
