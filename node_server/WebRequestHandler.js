@@ -24,6 +24,18 @@ const options = {
   cert: fs.readFileSync('C:/Cert/_.magickingofthediscord.com_private_key.pfx')
 };
 
+function CheckPostBody(paramArray)
+{
+	var validBody = true;
+
+	forEach(paramArray, function(element) {
+		if (element == null)
+			validBody = false;
+	})
+
+	return validBody;
+}
+
 
 Constants.WEB_SERVER.on('start', async function() 
 {
@@ -50,15 +62,26 @@ Constants.WEB_SERVER.on('start', async function()
 
 	app.route('/purchase')
 	  .get(function (req, res) {
-	    res.send('Get a random book')
+	    res.send('INVALID PROTOCOL')
 	  })
 	  .post(function (req, res) {
-	    res.send('Add a book');
-	    console.log("POST data");
-	    console.log(req);
-	  })
-	  .put(function (req, res) {
-	    res.send('Update the book')
+
+	  	if (req.body == null || req.body == undefined)
+	  	{
+	  		res.send("")
+	  	}
+
+	  	let PostDataCheck = CheckPostBody([req.body["customerID"], req.body["type"], req.body["currency"], req.body["payment_intent"], req.body["line_items_ID"], 
+	  		req.body["productID"], req.body["paid"], req.body["quantity"], req.body["isLiveMode"], req.body["email"]]);
+
+	  	if (PostDataCheck) {
+
+	    	res.send(`POSTED PURCHASE INFORMATION FOR CLIENT: ${req.body.customerID}`);
+	    	console.log("POST data");
+		}
+	    //console.log(req);
+
+
 	  })
 
 	app.listen(8080, function(){
