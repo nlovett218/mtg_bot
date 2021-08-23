@@ -5,6 +5,7 @@
   "main": "bot.js",
   "dependencies": {
     "@top-gg/sdk": "^3.1.2",
+    "body-parser": "^1.19.0",
     "bufferutil": "^4.0.1",
     "canvas": "^2.8.0",
     "discord.js": "^12.2.0",
@@ -16,6 +17,7 @@
     "node-abort-controller": "^3.0.0",
     "node-adodb": "^5.0.2",
     "node-opus": "^0.3.3",
+    "nodemailer": "^6.6.3",
     "p-iteration": "^1.1.8",
     "require-dir": "^1.2.0",
     "sequence": "^3.0.0",

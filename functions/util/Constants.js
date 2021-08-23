@@ -95,7 +95,7 @@ var local = {
       connectionLimit : 100, //important
       host     : 'localhost',
       user     : 'mtg_bot',
-      password : '',
+      password : 'Clovett84##',
       database : 'mtg_db',
       debug    :  false
   }),
@@ -103,6 +103,15 @@ var local = {
   commandRequests: [
 
   ],
+
+  MailTypes: {
+    "onpurchase": {
+      file: "onPurchase.html",
+      SUBJECT_TITLE: "{KEY}",
+      SUBJECT_SUBTITLE: "Thank you for your purchase!",
+      SUBJECT_BODY: "To redeem your purchase, go into any MKOTD-enabled discord server and use the m!code command followed by your purchase code above.<br />Feel free to reply to this email, if you need any support!"
+    }
+  },
 
   _TypeValidation: {
 
