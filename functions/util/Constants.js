@@ -58,6 +58,7 @@ var local = {
   dailyCooldown: 1440,
   weeklyCooldown: 10080,
   commandCooldownTime: 500,
+  KEY_EXPIRE_TIME: 525600,
 
   baseDailyPackAward: 2,
   extraDailyPackAward: 3,
@@ -100,18 +101,22 @@ var local = {
       debug    :  false
   }),
 
+  PURCHASE_TABLE:"mtg_purchases",
+
   commandRequests: [
 
   ],
 
   MailTypes: {
     "onpurchase": {
-      file: "onPurchase.html",
-      SUBJECT_TITLE: "{KEY}",
-      SUBJECT_SUBTITLE: "Thank you for your purchase!",
-      SUBJECT_BODY: "To redeem your purchase, go into any MKOTD-enabled discord server and use the m!code command followed by your purchase code above.<br />Feel free to reply to this email, if you need any support!"
+      file: "./mail/onPurchase.html",
+      EMAIL_TITLE: "{KEY}",
+      EMAIL_SUBTITLE: "Thank you for your purchase!",
+      EMAIL_BODY: "To redeem your purchase, go into any MKOTD-enabled discord server and use the m!code command followed by your purchase code above.<br />Feel free to reply to this email, if you need any support!"
     }
   },
+
+
 
   _TypeValidation: {
 
