@@ -10,6 +10,7 @@ const http = require("http");
 const https = require("https");
 const app = express();
 const bodyParser = require("body-parser");
+const fs = require('fs');
 //const routes = require("./routes");
 var init = false;
 var server = null;
@@ -18,6 +19,11 @@ var server = null;
 var port = normalizePort(process.env.PORT || '8080');
 app.set('port', port);
 
+const options = {
+  key: fs.readFileSync('C:/Cert/_.magickingofthediscord.com_private_key.key'),
+  cert: fs.readFileSync('C:/Cert/_.magickingofthediscord.com_private_key.pfx')
+};
+
 
 Constants.WEB_SERVER.on('start', async function() 
 {
@@ -25,7 +31,10 @@ Constants.WEB_SERVER.on('start', async function()
 
 	init = true;
 
-	server = https.createServer(app);
+	/*server = https.createServer(options, function (req, res) {
+		res.writeHead(200);
+  		res.end("hello world\n");
+	}).listen(4433);*/
 
 	//router.get("/");
 	app.use(bodyParser.urlencoded({
@@ -33,6 +42,19 @@ Constants.WEB_SERVER.on('start', async function()
 	}));
 
 	app.use(express.json());
+
+	app.route('/')
+	  .get(function (req, res) {
+	    res.send('Get a random book')
+	  })
+	  .post(function (req, res) {
+	    res.send('Add a book');
+	    console.log("POST data");
+	  })
+	  .put(function (req, res) {
+	    res.send('Update the book')
+	  })
+
 	app.route('/purchase')
 	  .get(function (req, res) {
 	    res.send('Get a random book')
