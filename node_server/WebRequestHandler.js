@@ -43,7 +43,7 @@ Constants.WEB_SERVER.on('start', async function()
 
 	app.use(express.json());
 
-	app.route('/')
+	/*app.route('/')
 	  .get(function (req, res) {
 	    res.send('Get a random book')
 	  })
@@ -53,7 +53,7 @@ Constants.WEB_SERVER.on('start', async function()
 	  })
 	  .put(function (req, res) {
 	    res.send('Update the book')
-	  })
+	  })*/
 
 	app.route('/purchase')
 	  .get(function (req, res) {
@@ -62,6 +62,7 @@ Constants.WEB_SERVER.on('start', async function()
 	  .post(function (req, res) {
 	    res.send('Add a book');
 	    console.log("POST data");
+	    console.log(req);
 	  })
 	  .put(function (req, res) {
 	    res.send('Update the book')
