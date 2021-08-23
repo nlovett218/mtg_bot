@@ -25,7 +25,7 @@ Constants.WEB_SERVER.on('start', async function()
 
 	init = true;
 
-	//server = https.createServer(app);
+	server = https.createServer(app);
 
 	//router.get("/");
 	app.use(bodyParser.urlencoded({
