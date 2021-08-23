@@ -43,17 +43,10 @@ Constants.WEB_SERVER.on('start', async function()
 
 	app.use(express.json());
 
-	/*app.route('/')
+	app.route('/')
 	  .get(function (req, res) {
-	    res.send('Get a random book')
+	    res.send('MKOTD API')
 	  })
-	  .post(function (req, res) {
-	    res.send('Add a book');
-	    console.log("POST data");
-	  })
-	  .put(function (req, res) {
-	    res.send('Update the book')
-	  })*/
 
 	app.route('/purchase')
 	  .get(function (req, res) {
