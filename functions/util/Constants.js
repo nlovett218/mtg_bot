@@ -1931,6 +1931,15 @@ var local = {
 
   damagePlayer:async function(obj, caller, target, fieldID = null, amount, displayOutput = true)
   {
+    console.log(amount);
+
+    try {
+      amount = parseInt(amount);
+    }
+    catch (e)
+    {
+      amount = 0;
+    }
     //var t
     if (target == null)
     {
@@ -2586,7 +2595,7 @@ var local = {
                   subtract = cardTypeAttributes.subtract;
 
                 if (cardTypeAttributes["amount"] != null && cardTypeAttributes["amount"] != undefined)
-                  subtract = cardTypeAttributes.subtract;
+                  amount = cardTypeAttributes.amount;
 
                 var amountFixed = (amount + add) - subtract;
                 var source = cardTypeAttributes.source;
