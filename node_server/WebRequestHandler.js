@@ -48,13 +48,19 @@ async function INSERT_KEY_TO_DATABASE(data)
 	var EXPIRES = Constants.moment(now).add(Constants.KEY_EXPIRE_TIME, 'minutes').format(Constants.momentTimeFormat);//new Date(Constants.moment(timeSinceLastDraw).add(10, 'minutes').format("YYYY-MM-DD h:mm:ss"));
 	var CUSTOMER_ID = data.CUSTOMER_ID;
 	var PRODUCT_ID = data.PRODUCT_ID;
+	var QUANTITY = data.QUANTITY;
 	var CUSTOMER_EMAIL = data.EMAIL;
 
-	console.log(EXPIRES);
+	//console.log(EXPIRES);
 	//console.log(EXPIRES.toString());
 	//var query_user = `INSERT INTO ${table_name_user} (mtg_userID, mtg_rankxp, mtg_health, mtg_wildcards, mtg_lastClaimDateTime, mtg_packs, mtg_dailyPackCooldown, mtg_weeklyPackCooldown, mtg_currency, mtg_lastCardDrawnDateTime, mtg_lastAttackDateTime, mtg_lastDeathDateTime, mtg_lastQuerySentDateTime, mtg_guilds, mtg_lastOptInOutDateTime, mtg_startingDeck, mtg_kills, mtg_deaths, mtg_damagedealt, mtg_amounthealed, mtg_reset) VALUES ('${userID}', '${rankxp}', '${health}', '${JSON.stringify(wildcards)}', NULL, '${packs}', NULL, NULL, '${currency}', STR_TO_DATE('${mtg_lastCardDrawnTime}','%m-%d-%Y %H:%i:%s'), NULL, NULL, STR_TO_DATE('${mtg_lastQuerySentDateTime}', '%m-%d-%Y %H:%i:%s'), '${JSON.stringify(mtg_guilds)}', NULL, '${mtg_startingDeck}', '${mtg_kills}', '${mtg_deaths}', '${mtg_damagedealt}', '${mtg_amounthealed}', '0');`;
-	var insertDataQuery = `INSERT INTO ${Constants.PURCHASE_TABLE} (CODE, TIMESTAMP_CREATED, EXPIRES, CUSTOMER_ID, TIMESTAMP_REDEEMED, REDEEMER_USER_ID, PRODUCT_ID, CUSTOMER_EMAIL) VALUES ('${CODE}', STR_TO_DATE('${TIMESTAMP_CREATED}','%m-%d-%Y %H:%i:%s'), STR_TO_DATE('${EXPIRES}','%m-%d-%Y %H:%i:%s'), '${CUSTOMER_ID}', NULL, NULL, '${PRODUCT_ID}', '${CUSTOMER_EMAIL}')`;
+	var insertDataQuery = `INSERT INTO ${Constants.PURCHASE_TABLE} (CODE, TIMESTAMP_CREATED, EXPIRES, CUSTOMER_ID, TIMESTAMP_REDEEMED, REDEEMER_USER_ID, PRODUCT_ID, CUSTOMER_EMAIL, QUANTITY) VALUES ('${CODE}', STR_TO_DATE('${TIMESTAMP_CREATED}','%m-%d-%Y %H:%i:%s'), STR_TO_DATE('${EXPIRES}','%m-%d-%Y %H:%i:%s'), '${CUSTOMER_ID}', NULL, NULL, '${PRODUCT_ID}', '${CUSTOMER_EMAIL}', ${QUANTITY})`;
   var insertDataResult = await Constants.HandleConnection.callDBFunction("MYSQL-fireAndForget", insertDataQuery);
+}
+
+function GetSubjectField(pid)
+{
+	return Constants.PURCHASE_TABLE_REWARDS[pid].name;
 }
 
 
@@ -93,7 +99,7 @@ Constants.WEB_SERVER.on('start', async function()
 	  	}
 
 	  	let PostDataCheck = CheckPostBody([req.body["customerID"], req.body["type"], req.body["currency"], req.body["payment_intent"], req.body["line_items_ID"], 
-	  		req.body["productID"], req.body["paid"], req.body["quantity"], req.body["isLiveMode"], req.body["email"]]);
+	  		req.body["productID"], req.body["payment_status"], req.body["quantity"], req.body["isLiveMode"], req.body["email"], req.body["quantity"]]);
 
 	  	if (PostDataCheck) {
 
@@ -112,13 +118,16 @@ Constants.WEB_SERVER.on('start', async function()
 	    		CURRENCY: req.body["currency"],
 	    		PAYMENT_INTENT: req.body["payment_intent"],
 	    		PRODUCT_ID: req.body["productID"],
-	    		PAID: req.body["paid"],
+	    		PAID: req.body["payment_status"],
 	    		IS_LIVE: req.body["isLiveMode"],
-	    		EMAIL: req.body["email"]
+	    		EMAIL: req.body["email"],
+	    		QUANTITY: req.body["quantity"],
 	    	};
 
+	    	var subject_name = GetSubjectField(data.PRODUCT_ID);
+
 	    	await INSERT_KEY_TO_DATABASE(data);
-	    	await MailHandler.sendMail("Here is your product code", req.body.email, "onpurchase", data);
+	    	await MailHandler.sendMail(`Your purchase of ${data.QUANTITY}x ${subject_name}`, req.body.email, "onpurchase", data);
 	    	return;
 			}
 	    //console.log(req);

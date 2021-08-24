@@ -102,6 +102,44 @@ var local = {
   }),
 
   PURCHASE_TABLE:"mtg_purchases",
+  PURCHASE_TABLE_REWARDS: {
+    "prod_K5aPZnpaChHN5c": {
+      name: "Common Wildcard Pack I",
+      wildcards: {
+        common: 10,
+        uncommon: 0,
+        rare: 0,
+        mythic: 0
+      }
+    },
+    "prod_K5wT4hceYpphLA": {
+      name: "Uncommon Wildcard Pack I",
+      wildcards: {
+        common: 5,
+        uncommon: 10,
+        rare: 0,
+        mythic: 0
+      }
+    },
+    "prod_K5xYbdilxmR5XT": {
+      name: "Rare Wildcard Pack I",
+      wildcards: {
+        common: 5,
+        uncommon: 5,
+        rare: 10,
+        mythic: 0
+      }
+    },
+    "prod_K5xbAKS8REZlnp": {
+      name: "Mythic Rare Wildcard Pack I",
+      wildcards: {
+        common: 5,
+        uncommon: 5,
+        rare: 5,
+        mythic: 10
+      }
+    }
+  },
 
   commandRequests: [
 
@@ -112,7 +150,7 @@ var local = {
       file: "./mail/onPurchase.html",
       EMAIL_TITLE: "{KEY}",
       EMAIL_SUBTITLE: "Thank you for your purchase!",
-      EMAIL_BODY: "To redeem your purchase, go into any MKOTD-enabled discord server and use the m!code command followed by your purchase code above.<br />Feel free to reply to this email, if you need any support!"
+      EMAIL_BODY: "To redeem your purchase, private message the MKOTD bot and use the m!code command followed by your purchase code above.<u> DO NOT SHARE OR POST YOUR CODE!</u><br />Feel free to reply to this email, if you need any support!"
     }
   },
 

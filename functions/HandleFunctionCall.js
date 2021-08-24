@@ -28,8 +28,19 @@ Constants.client.on('message', async function(msg) {
   //console.log(msg);
     if (String(msg).lowerCase().startsWith(Constants.BotInfo.prefix().lowerCase(), 0))
     {
-      if (msg.channel.type === 'dm') {
-          return msg.reply('I can\'t execute that command inside DMs!');
+      if (msg.channel.type == 'dm') {
+
+          if (String(msg).lowerCase().startsWith(`${Constants.BotInfo.prefix().lowerCase()}code`) || String(msg).lowerCase().startsWith(`${Constants.BotInfo.prefix().lowerCase()}key`)) {
+
+            if (!userHasTimer(msg.author.id))
+              Constants.USER.emit('processusercommand', msg);
+            else {
+              msg.channel.send(`<@${msg.author.id}> slow down!`);
+            }
+
+            return;
+          }
+          else return msg.reply('I can\'t execute that command inside DMs!');
       }
 
       if (msg.author.id != Constants.client.user.id) {
